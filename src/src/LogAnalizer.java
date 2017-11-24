@@ -3,6 +3,7 @@ package src;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
@@ -15,7 +16,11 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
 
-public class log_analizer extends JLabel{
+import pt.lsts.imc.EstimatedState;
+import pt.lsts.imc.lsf.batch.LsfBatch;
+import pt.lsts.imc.net.Consume;
+
+public class LogAnalizer extends JLabel{
 	
 	private static final long serialVersionUID = 1L;
 	static JFrame frame = null;
@@ -24,8 +29,9 @@ public class log_analizer extends JLabel{
 	static JMenuBar menuBar;
 	static JMenu menu, submenu;
 	static JMenuItem menuItem;
+	static LsfBatch batch;
 	
-	public log_analizer(){
+	public LogAnalizer(){
 	      super();
 	    } 
 	
@@ -71,10 +77,22 @@ public class log_analizer extends JLabel{
 		menuItem = new JMenuItem("Open folder");
 		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
 		menuItem.getAccessibleContext().setAccessibleDescription("This doesn't really do anything");
-		menuItem.addActionListener(new MenuActionListener());
+		menuItem.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				System.out.println("Selected: " + e.getActionCommand());
+				batch = LsfBatch.selectFolders();
+				batch.process(new LogAnalizer());
+			}
+		});
 		menu.add(menuItem);
     	
     	frame.setJMenuBar(menuBar);
+	}
+	
+	@Consume
+	public void on(EstimatedState msg) {
+		System.out.println("EstimatedState: "+msg.getDate() + " "+ msg.getSourceName());
 	}
 	
 	public static void main(String[] args) {
