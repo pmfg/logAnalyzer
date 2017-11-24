@@ -1,2 +1,2 @@
 # logAnalyzer
-Log Analyzer for system with Running DUNE/IMC
+Log Analyzer for system with/running DUNE/IMC
