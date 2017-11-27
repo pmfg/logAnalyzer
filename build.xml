@@ -24,7 +24,6 @@
 			<zipfileset excludes="META-INF/*.SF" src="libs/libimc.jar"/>
 			<zipfileset excludes="META-INF/*.SF" src="libs/commons-cli-1.4.jar"/>
 		</jar>
-		<echo> "ola" </echo>
 	</target>
 
 	<target name="init">
