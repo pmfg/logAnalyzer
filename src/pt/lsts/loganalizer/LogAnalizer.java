@@ -1,6 +1,7 @@
-package src;
+package pt.lsts.loganalizer;
 
 import java.io.File;
+import java.net.URL;
 
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
@@ -63,8 +64,8 @@ public class LogAnalizer extends JLabel{
 		frame.setFocusable(true);
 		JPanel container = new JPanel();
 		container.setLayout(new BoxLayout(container, BoxLayout.X_AXIS));
-		//frame.getContentPane().setBackground(Color.DARK_GRAY);
-		loading = new ImageIcon("img/load.gif");
+		URL pathUrl = LogAnalizer.class.getResource("/resources/img/load.gif");
+		loading = new ImageIcon(pathUrl);
 		container.add(new JLabel(loading, JLabel.CENTER), JFrame.CENTER_ALIGNMENT);
 		m_text = new JLabel("Loading Entity Label id.",JLabel.CENTER);
 		container.add(m_text);

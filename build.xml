@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project basedir="." default="build" name="LogAnalyzer">
+	<property environment="env" />
+	<property name="debuglevel" value="source,lines,vars" />
+	<property name="target" value="1.8" />
+	<property name="source" value="1.8" />
+	<path id="LogAnalyzer.classpath">
+		<pathelement location="bin" />
+		<pathelement location="libs/libimc.jar" />
+		<pathelement location="libs/commons-cli-1.4.jar" />
+	</path>
+	<property name="exclude-defaults" value="**/Thumbs.db,**/thumbs.db,**/*~,**/#*#" />
+
+	<target name="loganalyzer-jar" description="Create a jar for the LogAnalyzer project">
+		<jar destfile="LogAnalyzer.jar" basedir="bin" excludes="${exclude-defaults}">
+			<include name="**/*.class" />
+			<include name="../LICENSE" />
+			<include name="resources/**/*" />
+			<manifest>
+				<attribute name="Built-By" value="teste" />
+				<attribute name="Built-On" value="hoje" />
+				<attribute name="Main-Class" value="pt.lsts.loganalizer.LogAnalizer" />
+			</manifest>
+			<zipfileset excludes="META-INF/*.SF" src="libs/libimc.jar"/>
+			<zipfileset excludes="META-INF/*.SF" src="libs/commons-cli-1.4.jar"/>
+		</jar>
+		<echo> "ola" </echo>
+	</target>
+
+	<target name="init">
+		<mkdir dir="bin" />
+		<copy includeemptydirs="false" todir="bin">
+			<fileset dir="src">
+				<exclude name="**/*.launch" />
+				<exclude name="**/*.java" />
+			</fileset>
+		</copy>
+	</target>
+	<target name="clean">
+		<delete dir="bin" />
+		<delete file="LogAnalyzer.jar" />
+	</target>
+	<target depends="clean" name="cleanall" />
+	<target depends="build-subprojects,build-project,loganalyzer-jar" name="build" />
+	<target name="build-subprojects" />
+	<target depends="init" name="build-project">
+		<echo message="${ant.project.name}: ${ant.file}" />
+		<javac debug="true" debuglevel="${debuglevel}" destdir="bin" includeantruntime="false" source="${source}" target="${target}">
+			<src path="src" />
+			<classpath refid="LogAnalyzer.classpath" />
+		</javac>
+	</target>
+	<target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects" />
+	<target name="LogAnalizer">
+		<java classname="pt.lsts.loganalizer.LogAnalizer" failonerror="true" fork="yes">
+			<classpath refid="LogAnalyzer.classpath" />
+		</java>
+	</target>
+</project>
