@@ -12,13 +12,17 @@
 	<property name="exclude-defaults" value="**/Thumbs.db,**/thumbs.db,**/*~,**/#*#" />
 
 	<target name="loganalyzer-jar" description="Create a jar for the LogAnalyzer project">
+		<tstamp>
+		      <format property="TODAY" pattern="yyyy-MM-dd | HH:mm:ss"  locale="pt,PT" />
+		</tstamp>
 		<jar destfile="LogAnalyzer.jar" basedir="bin" excludes="${exclude-defaults}">
 			<include name="**/*.class" />
 			<include name="../LICENSE" />
 			<include name="resources/**/*" />
 			<manifest>
-				<attribute name="Built-By" value="teste" />
-				<attribute name="Built-On" value="hoje" />
+				<attribute name="Built-By" value="${user.name}" />
+				<attribute name="Built-On" value="${TODAY}" />
+				<attribute name="Develop-Email" value="pedro@lsts.pt" />
 				<attribute name="Main-Class" value="pt.lsts.loganalizer.LogAnalizer" />
 			</manifest>
 			<zipfileset excludes="META-INF/*.SF" src="libs/libimc.jar"/>
