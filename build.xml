@@ -13,7 +13,7 @@
 
 	<target name="loganalyzer-jar" description="Create a jar for the LogAnalyzer project">
 		<tstamp>
-		      <format property="TODAY" pattern="yyyy-MM-dd | HH:mm:ss"  locale="pt,PT" />
+			<format property="TODAY" pattern="yyyy-MM-dd | HH:mm:ss"  locale="pt,PT" />
 		</tstamp>
 		<jar destfile="LogAnalyzer.jar" basedir="bin" excludes="${exclude-defaults}">
 			<include name="**/*.class" />
@@ -46,6 +46,9 @@
 	<target depends="clean" name="cleanall" />
 	<target depends="build-subprojects,build-project,loganalyzer-jar" name="build" />
 	<target name="build-subprojects" />
+	<target depends="clean,init,build-project,loganalyzer-jar" name="exe_jar">
+		<echo> EXE: java -jar ${ant.project.name}.jar -l [path_log] [options] </echo>
+	</target>
 	<target depends="init" name="build-project">
 		<echo message="${ant.project.name}: ${ant.file}" />
 		<javac debug="true" debuglevel="${debuglevel}" destdir="bin" includeantruntime="false" source="${source}" target="${target}">
