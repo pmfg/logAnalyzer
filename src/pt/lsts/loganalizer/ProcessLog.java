@@ -15,9 +15,14 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
+
 import pt.lsts.imc.lsf.batch.LsfBatch;
 
 public class ProcessLog {
+
+    private Object columnNames[] = { "Date/Time", "Task", "Message", "Entity Name" };
 
     private JFrame frame = null;
     private JPanel container;
@@ -34,7 +39,13 @@ public class ProcessLog {
     // private JPanel container;
     private JTextArea infoText;
     private JLabel image;
-    private JTable table;
+    private JTable error;
+    private JTable warming;
+    private JTable critical;
+    private DefaultTableModel modelErrorTable;
+    private DefaultTableModel modelWarmingTable;
+    private DefaultTableModel modelCriticalTable;
+    private int[] cntState;
 
     public ProcessLog() {
         super();
@@ -82,7 +93,7 @@ public class ProcessLog {
     }
 
     private void layoutInit() {
-        frame = new JFrame("Filter Loader");
+        frame = new JFrame("LogAnalyzer");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setResizable(true);
         frame.setSize(widhtFrame, heightFrame);
@@ -102,7 +113,7 @@ public class ProcessLog {
     }
 
     private void processResults(boolean graphicMode) {
-        int[] cntState = entityStatus.getStatusCnt();
+        cntState = entityStatus.getStatusCnt();
         System.out.println("\n\nEND VIEW");
         System.out.println("Error: " + cntState[entityStatus.CNT_ERROR]);
         System.out.println("Critical: " + cntState[entityStatus.CNT_CRITICAL]);
@@ -119,7 +130,26 @@ public class ProcessLog {
             infoText.setVisible(false);
             printToTable();
         }
-        // System.exit(1);
+        else {
+            Object[] text;
+            for (int i = 0; i < cntState[entityStatus.CNT_ERROR]; i++) {
+                text = entityStatus.getErrorString(i);
+                System.out.println(text[0] + " ; " + text[1] + " ; " + text[2] + " ; " + text[3] + " ; ");
+            }
+
+            for (int i = 0; i < cntState[entityStatus.CNT_CRITICAL]; i++) {
+                text = entityStatus.getCriticalString(i);
+                System.out.println(text[0] + " ; " + text[1] + " ; " + text[2] + " ; " + text[3] + " ; ");
+            }
+
+            for (int i = 0; i < cntState[entityStatus.CNT_WARMING]; i++) {
+                text = entityStatus.getWarmingString(i);
+                System.out.println(text[0] + " ; " + text[1] + " ; " + text[2] + " ; " + text[3] + " ; ");
+            }
+
+            System.exit(1);
+        }
+
         while (true) {
             try {
                 Thread.sleep(1000);
@@ -131,31 +161,71 @@ public class ProcessLog {
     }
 
     private void printToTable() {
-        Object rowData[][] = { { "Row1-Column1", "Row1-Column2", "Row1-Column3" },
-                { "Row2-Column1", "Row2-Column2", "Row2-Column3" } };
-        Object columnNames[] = { "Column One", "Column Two", "Column Three" };
+        // error table
+        TableModel modelError = new DefaultTableModel(null, columnNames) {
+            private static final long serialVersionUID = 3219347207460269967L;
 
-        JTable error = new JTable(rowData, columnNames);
+            public boolean isCellEditable(int rowIndex, int mColIndex) {
+                return false;
+            }
+        };
+        error = new JTable(modelError);
         error.setFillsViewportHeight(true);
-        error.setBackground(new Color(200, 70, 70));
+        error.setBackground(new Color(250, 100, 100));
+        modelErrorTable = (DefaultTableModel) error.getModel();
+        for (int i = 0; i < cntState[entityStatus.CNT_ERROR]; i++)
+            modelErrorTable.addRow(entityStatus.getErrorString(i));
+
         JScrollPane errorScrollPane = new JScrollPane(error);
 
-        JTable warming = new JTable(rowData, columnNames);
+        // warming table
+        TableModel modelWarming = new DefaultTableModel(null, columnNames) {
+            private static final long serialVersionUID = 3219347207460269968L;
+
+            public boolean isCellEditable(int rowIndex, int mColIndex) {
+                return false;
+            }
+        };
+        warming = new JTable(modelWarming);
         warming.setFillsViewportHeight(true);
         warming.setBackground(new Color(230, 190, 80));
+        modelWarmingTable = (DefaultTableModel) warming.getModel();
+        for (int i = 0; i < cntState[entityStatus.CNT_WARMING]; i++)
+            modelWarmingTable.addRow(entityStatus.getWarmingString(i));
+
         JScrollPane warmingScrollPane = new JScrollPane(warming);
 
-        JTable critical = new JTable(rowData, columnNames);
+        // critical table
+        TableModel modelCritical = new DefaultTableModel(null, columnNames) {
+            private static final long serialVersionUID = 3219347207460269969L;
+
+            public boolean isCellEditable(int rowIndex, int mColIndex) {
+                return false;
+            }
+        };
+        critical = new JTable(modelCritical);
         critical.setFillsViewportHeight(true);
         critical.setBackground(new Color(170, 80, 230));
+        modelCriticalTable = (DefaultTableModel) critical.getModel();
+        for (int i = 0; i < cntState[entityStatus.CNT_CRITICAL]; i++)
+            modelCriticalTable.addRow(entityStatus.getCriticalString(i));
         JScrollPane criticalScrollPane = new JScrollPane(critical);
 
+        // text label for tables
         container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
+        JTextArea errorText = new JTextArea("\nERROR\n");
+        errorText.setEditable(false);
+        JTextArea warmingText = new JTextArea("\nWARMING\n");
+        warmingText.setEditable(false);
+        JTextArea criticalText = new JTextArea("\nCRITICAL\n");
+        criticalText.setEditable(false);
 
+        container.add(errorText, BorderLayout.CENTER);
         container.add(errorScrollPane, BorderLayout.CENTER);
+        container.add(warmingText, BorderLayout.CENTER);
         container.add(warmingScrollPane, BorderLayout.CENTER);
+        container.add(criticalText, BorderLayout.CENTER);
         container.add(criticalScrollPane, BorderLayout.CENTER);
-        // frame.add(container);
         // frame.pack();
         frame.setVisible(true);
     }
