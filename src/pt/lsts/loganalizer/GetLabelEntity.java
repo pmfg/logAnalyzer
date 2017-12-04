@@ -1,18 +1,21 @@
 package pt.lsts.loganalizer;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import pt.lsts.imc.EntityInfo;
 import pt.lsts.imc.net.Consume;
 
 public class GetLabelEntity {
 
-    static String[] entityIdLabel = new String[256];
+    private Map<Integer, String> entityIdLabel = new HashMap<>();
 
     @Consume
     public void on(EntityInfo msg) {
-        entityIdLabel[msg.getId()] = msg.getLabel();
+        entityIdLabel.put((int) msg.getId(), msg.getLabel());
     }
 
-    String[] getEntityLabel() {
+    public Map<Integer, String> getEntityLabel() {
         return entityIdLabel;
     }
 }

@@ -1,44 +1,40 @@
 package pt.lsts.loganalizer;
 
+import java.awt.BorderLayout;
+import java.awt.Color;
 import java.io.File;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
 import javax.swing.JPanel;
-
-import pt.lsts.loganalizer.GetLabelEntity;
-
-import pt.lsts.imc.LogBookEntry;
-import pt.lsts.imc.LoggingControl;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextArea;
 import pt.lsts.imc.lsf.batch.LsfBatch;
-import pt.lsts.imc.net.Consume;
 
 public class ProcessLog {
 
-    static int CNT_ERROR = 0;
-    static int CNT_CRITICAL = 1;
-    static int CNT_WARMING = 2;
-
-    static JFrame frame = null;
-    static int widhtFrame = 800;
-    static int heightFrame = 460;
-    static JMenuBar menuBar;
-    static JMenu menu, submenu;
-    static JMenuItem menuItem;
-    static LsfBatch batch;
-    static String log_name;
-    static String[] entityIdLabel = new String[256];
-    static GetLabelEntity m_label_entity;
-    static int cntState[] = new int[4];
-    static ImageIcon loading;
-    static JPanel container;
-    static JLabel m_text;
+    private JFrame frame = null;
+    private JPanel container;
+    private int widhtFrame = 800;
+    private int heightFrame = 460;
+    // private JMenuBar menuBar;
+    // private JMenu menu, submenu;
+    // private JMenuItem menuItem;
+    private LsfBatch batch;
+    private Map<Integer, String> entityIdLabel = new HashMap<>();
+    private GetLabelEntity labelEntity;
+    private GetEntityStatus entityStatus;
+    private ImageIcon loading;
+    // private JPanel container;
+    private JTextArea infoText;
+    private JLabel image;
+    private JTable table;
 
     public ProcessLog() {
         super();
@@ -47,87 +43,120 @@ public class ProcessLog {
     public void addInfoOfLog(String log_path, boolean graphicMode) {
         if (graphicMode) {
             layoutInit();
-            System.out.println(log_path);
+            System.out.println("Log: " + log_path);
             processLog(log_path, true);
-            System.exit(1);
         }
         else {
-            System.out.println(log_path);
+            System.out.println("Log: " + log_path);
             processLog(log_path, false);
-            System.exit(1);
+        }
+    }
+
+    private void processLog(String path, boolean graphicMode) {
+        try {
+            if (graphicMode) {
+                infoText.setText("Log: " + path);
+                infoText.setText(infoText.getText() + " \nLoading Entity Label id.");
+            }
+
+            System.out.println("Loading Entity Label id.");
+            batch = LsfBatch.processFolders(new File[] { new File(path) });
+            labelEntity = new GetLabelEntity();
+            batch.process(labelEntity);
+            entityIdLabel = labelEntity.getEntityLabel();
+
+            if (graphicMode)
+                infoText.setText(infoText.getText() + " \nLoading Entity States of Tasks.");
+
+            System.out.println("Loading Entity States of Tasks.");
+            batch = LsfBatch.processFolders(new File[] { new File(path) });
+            entityStatus = new GetEntityStatus(entityIdLabel);
+            batch.process(entityStatus);
+
+            processResults(graphicMode);
+        }
+        catch (Exception e) {
+            System.out.println("ERROR loading log, is the correct path???");
+            e.printStackTrace();
         }
     }
 
     private void layoutInit() {
-        log_name = "NULL";
         frame = new JFrame("Filter Loader");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setResizable(true);
-        frame.setSize(widhtFrame + 10, heightFrame + 35);
+        frame.setSize(widhtFrame, heightFrame);
+        // frame.getContentPane().setBackground( Color.red );
         frame.setVisible(true);
         frame.setFocusable(true);
-        JPanel container = new JPanel();
+        container = new JPanel();
         container.setLayout(new BoxLayout(container, BoxLayout.X_AXIS));
         URL pathUrl = LogAnalizer.class.getResource("/resources/img/load.gif");
         loading = new ImageIcon(pathUrl);
-        container.add(new JLabel(loading, JLabel.CENTER), JFrame.CENTER_ALIGNMENT);
-        m_text = new JLabel("Loading Entity Label id.", JLabel.CENTER);
-        container.add(m_text);
+        image = new JLabel(loading, JLabel.CENTER);
+        container.add(image, JFrame.CENTER_ALIGNMENT);
+        infoText = new JTextArea();
+        infoText.setEditable(false);
+        container.add(infoText);
         frame.add(container);
-        for (int i = 0; i < 3; i++)
-            cntState[i] = 0;
     }
 
-    @Consume
-    public void on(LogBookEntry msg) {
-        if (msg.getType() == LogBookEntry.TYPE.ERROR) {
-            System.out.println("LogBookEntry: " + msg.getDate() + " # " + log_name + " # " + msg.getContext() + " # "
-                    + msg.getText() + " # " + entityIdLabel[msg.getSrcEnt()]);
-            cntState[CNT_ERROR]++;
+    private void processResults(boolean graphicMode) {
+        int[] cntState = entityStatus.getStatusCnt();
+        System.out.println("\n\nEND VIEW");
+        System.out.println("Error: " + cntState[entityStatus.CNT_ERROR]);
+        System.out.println("Critical: " + cntState[entityStatus.CNT_CRITICAL]);
+        System.out.println("Warming: " + cntState[entityStatus.CNT_WARMING]);
+
+        if (graphicMode) {
+            /*
+             * infoText.setText(infoText.getText()+"\n\nError: " + cntState[entityStatus.CNT_ERROR]);
+             * infoText.setText(infoText.getText()+"\nCritical: " + cntState[entityStatus.CNT_CRITICAL]);
+             * infoText.setText(infoText.getText()+"\nWarming: " + cntState[entityStatus.CNT_WARMING]);
+             * infoText.setText(infoText.getText()+"\nDONE");
+             */
+            image.setVisible(false);
+            infoText.setVisible(false);
+            printToTable();
         }
-        else if (msg.getType() == LogBookEntry.TYPE.CRITICAL) {
-            System.out.println("LogBookEntry: " + msg.getDate() + " # " + log_name + " # " + msg.getContext() + " # "
-                    + msg.getText() + " # " + entityIdLabel[msg.getSrcEnt()]);
-            cntState[CNT_CRITICAL]++;
-        }
-        else if (msg.getType() == LogBookEntry.TYPE.WARNING) {
-            if (!msg.getText().equals("now in 'CALIBRATION' mode")
-                    && !msg.getText().equals("now in 'MANEUVERING' mode")) {
-                System.out.println("LogBookEntry: " + msg.getDate() + " # " + log_name + " # " + msg.getContext()
-                        + " # " + msg.getText() + " # " + entityIdLabel[msg.getSrcEnt()]);
-                cntState[CNT_WARMING]++;
+        // System.exit(1);
+        while (true) {
+            try {
+                Thread.sleep(1000);
+            }
+            catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
     }
 
-    @Consume
-    public void on(LoggingControl msg) {
-        if (!msg.getName().equals(log_name) && msg.getName().length() > 8) {
-            log_name = msg.getName();
-        }
-    }
+    private void printToTable() {
+        Object rowData[][] = { { "Row1-Column1", "Row1-Column2", "Row1-Column3" },
+                { "Row2-Column1", "Row2-Column2", "Row2-Column3" } };
+        Object columnNames[] = { "Column One", "Column Two", "Column Three" };
 
-    public void processLog(String path, boolean graphicMode) {
-        try {
-            File[] file = new File[1];
-            file[0] = new File(path);
-            batch = LsfBatch.processFolders(file);
-            m_label_entity = new GetLabelEntity();
-            batch.process(m_label_entity);
-            entityIdLabel = m_label_entity.getEntityLabel();
-            batch = LsfBatch.processFolders(file);
-            System.out.println("##########################");
-            if (graphicMode)
-                m_text.setText("Loading Entity States of Tasks.");
-            batch.process(new ProcessLog());
-            System.out.println("\n\nEND VIEW");
-            System.out.println("Error: " + cntState[CNT_ERROR]);
-            System.out.println("Critical: " + cntState[CNT_CRITICAL]);
-            System.out.println("Warming: " + cntState[CNT_WARMING]);
-        }
-        catch (Exception e) {
-            System.out.println("ERROR loading log, is the correct path???");
-        }
-    }
+        JTable error = new JTable(rowData, columnNames);
+        error.setFillsViewportHeight(true);
+        error.setBackground(new Color(200, 70, 70));
+        JScrollPane errorScrollPane = new JScrollPane(error);
 
+        JTable warming = new JTable(rowData, columnNames);
+        warming.setFillsViewportHeight(true);
+        warming.setBackground(new Color(230, 190, 80));
+        JScrollPane warmingScrollPane = new JScrollPane(warming);
+
+        JTable critical = new JTable(rowData, columnNames);
+        critical.setFillsViewportHeight(true);
+        critical.setBackground(new Color(170, 80, 230));
+        JScrollPane criticalScrollPane = new JScrollPane(critical);
+
+        container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
+
+        container.add(errorScrollPane, BorderLayout.CENTER);
+        container.add(warmingScrollPane, BorderLayout.CENTER);
+        container.add(criticalScrollPane, BorderLayout.CENTER);
+        // frame.add(container);
+        // frame.pack();
+        frame.setVisible(true);
+    }
 }

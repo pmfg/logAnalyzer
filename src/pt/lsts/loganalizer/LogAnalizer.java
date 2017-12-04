@@ -13,7 +13,7 @@ public class LogAnalizer extends JLabel {
 
     private static final long serialVersionUID = 1L;
 
-    static String log_path;
+    static String logPath;
     static boolean graphicMode;
     static ProcessLog processLog;
 
@@ -57,10 +57,10 @@ public class LogAnalizer extends JLabel {
         else {
             if (cmd.hasOption('l') && cmd.hasOption('g')) {
                 graphicMode = true;
-                log_path = cmd.getOptionValue('l');
+                logPath = cmd.getOptionValue('l');
             }
             else if (cmd.hasOption('l')) {
-                log_path = cmd.getOptionValue('l');
+                logPath = cmd.getOptionValue('l');
             }
             else if (cmd.hasOption('g')) {
                 System.out.println("GRAPHIC MODE - work in progress");
@@ -78,7 +78,7 @@ public class LogAnalizer extends JLabel {
         graphicMode = false;
         readInputArgs(args);
         processLog = new ProcessLog();
-        processLog.addInfoOfLog(log_path, graphicMode);
+        processLog.addInfoOfLog(logPath, graphicMode);
         while (true) {
             try {
                 Thread.sleep(1000);
