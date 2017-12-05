@@ -1,6 +1,9 @@
 package pt.lsts.loganalizer;
 
 import java.awt.BorderLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.net.URL;
 import java.util.HashMap;
@@ -10,10 +13,14 @@ import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
+import javax.swing.KeyStroke;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 
@@ -27,9 +34,9 @@ public class ProcessLog {
     private JPanel container;
     private int widhtFrame = 960;
     private int heightFrame = 640;
-    // private JMenuBar menuBar;
-    // private JMenu menu, submenu;
-    // private JMenuItem menuItem;
+    private JMenuBar menuBar;
+    private JMenu menu;
+    private JMenuItem menuItem;
     private LsfBatch batch;
     private Map<Integer, String> entityIdLabel = new HashMap<>();
     private GetLabelEntity labelEntity;
@@ -41,24 +48,26 @@ public class ProcessLog {
     private JTable tableState;
     private DefaultTableModel modelTableState;
     private int[] cntState;
+    private boolean newPath;
 
     public ProcessLog() {
         super();
     }
 
-    public void addInfoOfLog(String log_path, boolean graphicMode) {
+    public boolean addInfoOfLog(String log_path, boolean graphicMode) {
+        newPath = false;
         if (graphicMode) {
             layoutInit();
             System.out.println("Log: " + log_path);
-            processLog(log_path, true);
+            return processLog(log_path, true);
         }
         else {
             System.out.println("Log: " + log_path);
-            processLog(log_path, false);
+            return processLog(log_path, false);
         }
     }
 
-    private void processLog(String path, boolean graphicMode) {
+    private boolean processLog(String path, boolean graphicMode) {
         try {
             if (graphicMode) {
                 infoText.setText("Log: " + path);
@@ -79,11 +88,12 @@ public class ProcessLog {
             entityStatus = new GetEntityStatus(entityIdLabel);
             batch.process(entityStatus);
 
-            processResults(graphicMode);
+            return processResults(graphicMode);
         }
         catch (Exception e) {
             System.out.println("ERROR loading log, is the correct path???");
             e.printStackTrace();
+            return false;
         }
     }
 
@@ -104,9 +114,23 @@ public class ProcessLog {
         infoText.setEditable(false);
         container.add(infoText);
         frame.add(container);
+
+        menuBar = new JMenuBar();
+        menu = new JMenu("File");
+        menu.setMnemonic(KeyEvent.VK_F);
+        menu.getAccessibleContext().setAccessibleDescription("The only menu in this program that has menu items");
+        menuBar.add(menu);
+
+        menuItem = new JMenuItem("Open folder");
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
+        menuItem.getAccessibleContext().setAccessibleDescription("This doesn't really do anything");
+        menuItem.addActionListener(new MenuActionListener());
+        menu.add(menuItem);
+
+        frame.setJMenuBar(menuBar);
     }
 
-    private void processResults(boolean graphicMode) {
+    private boolean processResults(boolean graphicMode) {
         cntState = entityStatus.getStatusCnt();
         System.out.println("\nError: " + cntState[entityStatus.CNT_ERROR]);
         System.out.println("Critical: " + cntState[entityStatus.CNT_CRITICAL]);
@@ -130,14 +154,19 @@ public class ProcessLog {
             System.exit(1);
         }
 
-        while (true) {
+        boolean exitWhile = false;
+        while (!exitWhile) {
             try {
                 Thread.sleep(1000);
+                if (newPath)
+                    exitWhile = true;
             }
             catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
+
+        return true;
     }
 
     private void printToTable() {
@@ -163,5 +192,16 @@ public class ProcessLog {
         container.add(tableScrollPane, BorderLayout.CENTER);
         // frame.pack();
         frame.setVisible(true);
+    }
+
+    public class MenuActionListener implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            System.out.println("Selected: " + e.getActionCommand());
+            frame.dispose();
+            newPath = true;
+
+        }
+
     }
 }

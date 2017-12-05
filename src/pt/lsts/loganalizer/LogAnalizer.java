@@ -1,5 +1,6 @@
 package pt.lsts.loganalizer;
 
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -21,7 +22,7 @@ public class LogAnalizer extends JLabel {
         super();
     }
 
-    static void readInputArgs(String[] args) {
+    private static void readInputArgs(String[] args) {
         Options options = new Options();
         Option input = new Option("l", null, true, "log path");
         input.setRequired(false);
@@ -63,8 +64,11 @@ public class LogAnalizer extends JLabel {
                 logPath = cmd.getOptionValue('l');
             }
             else if (cmd.hasOption('g')) {
-                System.out.println("GRAPHIC MODE - work in progress");
-                System.exit(1);
+                JFileChooser f = new JFileChooser();
+                f.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                f.showSaveDialog(null);
+                logPath = f.getSelectedFile().toString();
+                graphicMode = true;
             }
             else {
                 formatter.printHelp("LogAnalizer [options]", options);
@@ -78,14 +82,17 @@ public class LogAnalizer extends JLabel {
         graphicMode = false;
         readInputArgs(args);
         processLog = new ProcessLog();
-        processLog.addInfoOfLog(logPath, graphicMode);
         while (true) {
-            try {
-                Thread.sleep(1000);
+            if (processLog.addInfoOfLog(logPath, graphicMode)) {
+                JFileChooser f = new JFileChooser();
+                f.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                f.showSaveDialog(null);
+                logPath = f.getSelectedFile().toString();
+                graphicMode = true;
+                processLog = new ProcessLog();
             }
-            catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            else
+                System.exit(1);
         }
     }
 
