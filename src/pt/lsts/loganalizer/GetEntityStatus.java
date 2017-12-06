@@ -103,7 +103,7 @@ public class GetEntityStatus {
                 warningEntity.put(cntWarningMsg++, entityLabel.get((int) msg.getSrcEnt()));
 
                 cntState[CNT_ALL]++;
-                allState.put(cntAlllMsg, "WARMING");
+                allState.put(cntAlllMsg, "WARNING");
                 allDate.put(cntAlllMsg, msg.getDate().toString());
                 allTask.put(cntAlllMsg, msg.getContext());
                 allMessage.put(cntAlllMsg, msg.getText());

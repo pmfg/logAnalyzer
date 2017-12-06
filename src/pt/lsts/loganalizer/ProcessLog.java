@@ -59,13 +59,16 @@ public class ProcessLog {
     private DefaultTableModel modelTableState;
     private int[] cntState;
     private boolean newPath;
+    private String logPathSave;
 
     public ProcessLog() {
         super();
     }
 
-    public boolean addInfoOfLog(String log_path, boolean graphicMode) {
+    public boolean addInfoOfLog(String log_path, boolean graphicMode, String logPathOutput) {
         newPath = false;
+        logPathSave = logPathOutput;
+        System.out.println("AQUI1: " + logPathSave);
         if (graphicMode) {
             layoutInit();
             System.out.println("Log: " + log_path);
@@ -144,7 +147,7 @@ public class ProcessLog {
         cntState = entityStatus.getStatusCnt();
         System.out.println("\nError: " + cntState[entityStatus.CNT_ERROR]);
         System.out.println("Critical: " + cntState[entityStatus.CNT_CRITICAL]);
-        System.out.println("Warning: " + cntState[entityStatus.CNT_WARMING]);
+        System.out.println("Warning: " + cntState[entityStatus.CNT_WARNING]);
         System.out.println("All mesages: " + cntState[entityStatus.CNT_ALL] + "\n");
 
         if (graphicMode) {
@@ -180,10 +183,50 @@ public class ProcessLog {
         return true;
     }
 
+    private boolean createDirLog(String path) {
+        File theDir = new File(path);
+
+        // if the directory does not exist, create it
+        if (!theDir.exists()) {
+            System.out.println("creating directory: " + theDir.getName());
+            boolean result = false;
+            try {
+                theDir.mkdir();
+                result = true;
+            }
+            catch (SecurityException se) {
+                System.out.println("DIR not created");
+                se.printStackTrace();
+                return false;
+            }
+
+            if (result) {
+                System.out.println("DIR created " + path);
+                return true;
+            }
+            else {
+                System.out.println("DIR not created");
+                return false;
+            }
+        }
+        else {
+            return true;
+        }
+    }
+
     private void printToPdf() {
+        if (logPathSave.equals("null")) {
+            logPathSave = System.getProperty("user.home") + "/logResults";
+            createDirLog(logPathSave);
+        }
+        else {
+            createDirLog(logPathSave);
+        }
+
         SimpleDateFormat sdf = new SimpleDateFormat("dd-M-yyyy hh:mm:ss");
-        String fileName = entityStatus.getLogName().replace('/', '_') + "_#_" + sdf.format(new Date()) + ".pdf";
-        //System.out.println(fileName.replace(' ', '_').replace(':', '-'));
+        String fileName = logPathSave + "/" + entityStatus.getLogName().replace('/', '_') + "_#_"
+                + sdf.format(new Date()) + ".pdf";
+        // System.out.println(fileName.replace(' ', '_').replace(':', '-'));
         Document doc = new Document(PageSize.A4.rotate());
         try {
             PdfWriter.getInstance(doc, new FileOutputStream(fileName.replace(' ', '_').replace(':', '-')));
@@ -201,7 +244,7 @@ public class ProcessLog {
             }
             doc.add(pdfTable);
             doc.close();
-            System.out.println("done export to pdf");
+            System.out.println("done export to pdf: " + fileName);
         }
         catch (DocumentException ex) {
             ex.printStackTrace();
