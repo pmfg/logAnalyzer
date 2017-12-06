@@ -5,7 +5,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,6 +27,12 @@ import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
+
+import com.lowagie.text.Document;
+import com.lowagie.text.DocumentException;
+import com.lowagie.text.PageSize;
+import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfWriter;
 
 import pt.lsts.imc.lsf.batch.LsfBatch;
 
@@ -134,13 +144,14 @@ public class ProcessLog {
         cntState = entityStatus.getStatusCnt();
         System.out.println("\nError: " + cntState[entityStatus.CNT_ERROR]);
         System.out.println("Critical: " + cntState[entityStatus.CNT_CRITICAL]);
-        System.out.println("Warming: " + cntState[entityStatus.CNT_WARMING]);
+        System.out.println("Warning: " + cntState[entityStatus.CNT_WARMING]);
         System.out.println("All mesages: " + cntState[entityStatus.CNT_ALL] + "\n");
 
         if (graphicMode) {
             image.setVisible(false);
             infoText.setVisible(false);
             printToTable();
+            printToPdf();
         }
         else {
             Object[] text;
@@ -169,6 +180,37 @@ public class ProcessLog {
         return true;
     }
 
+    private void printToPdf() {
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-M-yyyy hh:mm:ss");
+        String fileName = entityStatus.getLogName().replace('/', '_') + "_#_" + sdf.format(new Date()) + ".pdf";
+        //System.out.println(fileName.replace(' ', '_').replace(':', '-'));
+        Document doc = new Document(PageSize.A4.rotate());
+        try {
+            PdfWriter.getInstance(doc, new FileOutputStream(fileName.replace(' ', '_').replace(':', '-')));
+            doc.open();
+            PdfPTable pdfTable = new PdfPTable(tableState.getColumnCount());
+            // adding table headers
+            for (int i = 0; i < tableState.getColumnCount(); i++) {
+                pdfTable.addCell(tableState.getColumnName(i));
+            }
+            // extracting data from the JTable and inserting it to PdfPTable
+            for (int rows = 0; rows < tableState.getRowCount() - 1; rows++) {
+                for (int cols = 0; cols < tableState.getColumnCount(); cols++) {
+                    pdfTable.addCell(tableState.getModel().getValueAt(rows, cols).toString());
+                }
+            }
+            doc.add(pdfTable);
+            doc.close();
+            System.out.println("done export to pdf");
+        }
+        catch (DocumentException ex) {
+            ex.printStackTrace();
+        }
+        catch (FileNotFoundException ex) {
+            ex.printStackTrace();
+        }
+    }
+
     private void printToTable() {
         TableModel modelTable = new DefaultTableModel(null, columnNames) {
             private static final long serialVersionUID = 3219347207460269970L;
@@ -180,7 +222,7 @@ public class ProcessLog {
 
         tableState = new JTable(modelTable);
         tableState.setFillsViewportHeight(true);
-        tableState.setDefaultRenderer(Object.class, new MyTableCellRender());
+        tableState.setDefaultRenderer(Object.class, new TableCellRender());
         modelTableState = (DefaultTableModel) tableState.getModel();
 
         for (int i = 0; i < cntState[entityStatus.CNT_ALL]; i++)

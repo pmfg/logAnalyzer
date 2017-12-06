@@ -8,6 +8,7 @@
 		<pathelement location="bin" />
 		<pathelement location="libs/libimc.jar" />
 		<pathelement location="libs/commons-cli-1.4.jar" />
+        <pathelement location="libs/com.lowagie.text-2.1.7.jar" />
 	</path>
 	<property name="exclude-defaults" value="**/Thumbs.db,**/thumbs.db,**/*~,**/#*#" />
 
@@ -27,6 +28,7 @@
 			</manifest>
 			<zipfileset excludes="META-INF/*.SF" src="libs/libimc.jar"/>
 			<zipfileset excludes="META-INF/*.SF" src="libs/commons-cli-1.4.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="libs/com.lowagie.text-2.1.7.jar"/>
 		</jar>
 	</target>
 

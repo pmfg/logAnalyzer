@@ -11,7 +11,7 @@ public class GetEntityStatus {
 
     public int CNT_ERROR = 0;
     public int CNT_CRITICAL = 1;
-    public int CNT_WARMING = 2;
+    public int CNT_WARNING = 2;
     public int CNT_ALL = 3;
 
     private String logName;
@@ -24,11 +24,11 @@ public class GetEntityStatus {
     private static Map<Integer, String> errorEntity = new HashMap<>();
     private int cntErrorMsg;
 
-    private static Map<Integer, String> warmingDate = new HashMap<>();
-    private static Map<Integer, String> warmingTask = new HashMap<>();
-    private static Map<Integer, String> warmingMessage = new HashMap<>();
-    private static Map<Integer, String> warmingEntity = new HashMap<>();
-    private int cntWarmingMsg;
+    private static Map<Integer, String> warningDate = new HashMap<>();
+    private static Map<Integer, String> warningTask = new HashMap<>();
+    private static Map<Integer, String> warningMessage = new HashMap<>();
+    private static Map<Integer, String> warningEntity = new HashMap<>();
+    private int cntWarningMsg;
 
     private static Map<Integer, String> criticalDate = new HashMap<>();
     private static Map<Integer, String> criticalTask = new HashMap<>();
@@ -50,7 +50,7 @@ public class GetEntityStatus {
         entityLabel = entityIdLabel;
 
         cntErrorMsg = 0;
-        cntWarmingMsg = 0;
+        cntWarningMsg = 0;
         cntCriticalMsg = 0;
     }
 
@@ -96,11 +96,11 @@ public class GetEntityStatus {
                 // System.out.println("LogBookEntry: " + msg.getDate() + " # " + logName + " # " + msg.getContext() + "
                 // # "
                 // + msg.getText() + " # " + entityLabel.get((int) msg.getSrcEnt()));
-                cntState[CNT_WARMING]++;
-                warmingDate.put(cntWarmingMsg, msg.getDate().toString());
-                warmingTask.put(cntWarmingMsg, msg.getContext());
-                warmingMessage.put(cntWarmingMsg, msg.getText());
-                warmingEntity.put(cntWarmingMsg++, entityLabel.get((int) msg.getSrcEnt()));
+                cntState[CNT_WARNING]++;
+                warningDate.put(cntWarningMsg, msg.getDate().toString());
+                warningTask.put(cntWarningMsg, msg.getContext());
+                warningMessage.put(cntWarningMsg, msg.getText());
+                warningEntity.put(cntWarningMsg++, entityLabel.get((int) msg.getSrcEnt()));
 
                 cntState[CNT_ALL]++;
                 allState.put(cntAlllMsg, "WARMING");
@@ -122,12 +122,12 @@ public class GetEntityStatus {
         return stringText;
     }
 
-    public Object[] getWarmingString(int id) {
+    public Object[] getWarningString(int id) {
         Object[] stringText = new Object[4];
-        stringText[0] = warmingDate.get(id);
-        stringText[1] = warmingTask.get(id);
-        stringText[2] = warmingMessage.get(id);
-        stringText[3] = warmingEntity.get(id);
+        stringText[0] = warningDate.get(id);
+        stringText[1] = warningTask.get(id);
+        stringText[2] = warningMessage.get(id);
+        stringText[3] = warningEntity.get(id);
 
         return stringText;
     }
@@ -160,6 +160,10 @@ public class GetEntityStatus {
         }
     }
 
+    public String getLogName() {
+        return logName;
+    }
+    
     public int[] getStatusCnt() {
         return cntState;
     }

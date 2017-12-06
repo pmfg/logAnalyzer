@@ -4,15 +4,15 @@ import javax.swing.*;
 import javax.swing.table.*;
 import java.awt.*;
 
-class MyTableCellRender extends DefaultTableCellRenderer {
+class TableCellRender extends DefaultTableCellRenderer {
 
     private static final long serialVersionUID = 1L;
 
     private Color COLOR_ERROR = new Color(250, 100, 100);
-    private Color COLOR_WARMING = new Color(230, 190, 80);
+    private Color COLOR_WARNING = new Color(230, 190, 80);
     private Color COLOR_CRITICAL = new Color(170, 80, 230);
 
-    public MyTableCellRender() {
+    public TableCellRender() {
         setOpaque(true);
     }
 
@@ -25,9 +25,9 @@ class MyTableCellRender extends DefaultTableCellRenderer {
                 setForeground(Color.black);
                 setBackground(COLOR_ERROR);
             }
-            else if (text.equals("WARMING")) {
+            else if (text.equals("WARNING")) {
                 setForeground(Color.black);
-                setBackground(COLOR_WARMING);
+                setBackground(COLOR_WARNING);
             }
             else if (text.equals("CRITICAL")) {
                 setForeground(Color.black);
