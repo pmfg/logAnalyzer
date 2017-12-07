@@ -7,6 +7,7 @@ import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.PrintWriter;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -153,18 +154,15 @@ public class ProcessLog {
         if (graphicMode) {
             image.setVisible(false);
             infoText.setVisible(false);
-            printToTable();
+            printToCSV();
+            printToTable(true);
             printToPdf();
         }
         else {
-            Object[] text;
 
-            for (int i = 0; i < cntState[entityStatus.CNT_ALL]; i++) {
-                text = entityStatus.getAllString(i);
-                System.out.println(
-                        text[0] + " ; " + text[1] + " ; " + text[2] + " ; " + text[3] + " ; " + text[4] + " ; ");
-            }
-
+            printToCSV();
+            printToTable(false);
+            printToPdf();
             System.exit(1);
         }
 
@@ -181,6 +179,38 @@ public class ProcessLog {
         }
 
         return true;
+    }
+
+    private void printToCSV() {
+        if (logPathSave.equals("null")) {
+            logPathSave = System.getProperty("user.home") + "/logResults";
+            createDirLog(logPathSave);
+        }
+        else {
+            createDirLog(logPathSave);
+        }
+
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-M-yyyy hh:mm:ss");
+        String fileName = logPathSave + "/" + entityStatus.getLogName().replace('/', '_') + "_#_"
+                + sdf.format(new Date()) + ".csv";
+        fileName = fileName.replace(' ', '_').replace(':', '-');
+        PrintWriter csv = null;
+        try {
+            csv = new PrintWriter(new File(fileName));
+        }
+        catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        Object[] text;
+        for (int i = 0; i < cntState[entityStatus.CNT_ALL]; i++) {
+            text = entityStatus.getAllString(i);
+            String textCSV = text[0] + " ; " + text[1] + " ; " + text[2] + " ; " + text[3] + " ; " + text[4] + " ;\n";
+            // System.out.println(textCSV);
+            csv.write(textCSV);
+        }
+        csv.close();
+        System.out.println("done export to csv: " + fileName);
     }
 
     private boolean createDirLog(String path) {
@@ -226,10 +256,11 @@ public class ProcessLog {
         SimpleDateFormat sdf = new SimpleDateFormat("dd-M-yyyy hh:mm:ss");
         String fileName = logPathSave + "/" + entityStatus.getLogName().replace('/', '_') + "_#_"
                 + sdf.format(new Date()) + ".pdf";
+        fileName = fileName.replace(' ', '_').replace(':', '-');
         // System.out.println(fileName.replace(' ', '_').replace(':', '-'));
         Document doc = new Document(PageSize.A4.rotate());
         try {
-            PdfWriter.getInstance(doc, new FileOutputStream(fileName.replace(' ', '_').replace(':', '-')));
+            PdfWriter.getInstance(doc, new FileOutputStream(fileName));
             doc.open();
             PdfPTable pdfTable = new PdfPTable(tableState.getColumnCount());
             // adding table headers
@@ -254,7 +285,7 @@ public class ProcessLog {
         }
     }
 
-    private void printToTable() {
+    private void printToTable(boolean graphicMode) {
         TableModel modelTable = new DefaultTableModel(null, columnNames) {
             private static final long serialVersionUID = 3219347207460269970L;
 
@@ -271,12 +302,14 @@ public class ProcessLog {
         for (int i = 0; i < cntState[entityStatus.CNT_ALL]; i++)
             modelTableState.addRow(entityStatus.getAllString(i));
 
-        JScrollPane tableScrollPane = new JScrollPane(tableState);
+        if (graphicMode) {
+            JScrollPane tableScrollPane = new JScrollPane(tableState);
 
-        container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
-        container.add(tableScrollPane, BorderLayout.CENTER);
-        // frame.pack();
-        frame.setVisible(true);
+            container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
+            container.add(tableScrollPane, BorderLayout.CENTER);
+            // frame.pack();
+            frame.setVisible(true);
+        }
     }
 
     public class MenuActionListener implements ActionListener {
