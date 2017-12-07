@@ -39,7 +39,7 @@ import pt.lsts.imc.lsf.batch.LsfBatch;
 
 public class ProcessLog {
 
-    private Object columnNames[] = { "STATUS", "Date/Time", "Task", "Message", "Entity Name" };
+    private Object columnNames[] = { "STATUS", "System Name", "Log Name", "Date/Time", "Task", "Message", "Entity Name" };
 
     private JFrame frame = null;
     private JPanel container;
@@ -132,12 +132,10 @@ public class ProcessLog {
         menuBar = new JMenuBar();
         menu = new JMenu("File");
         menu.setMnemonic(KeyEvent.VK_F);
-        menu.getAccessibleContext().setAccessibleDescription("The only menu in this program that has menu items");
         menuBar.add(menu);
 
         menuItem = new JMenuItem("Open folder");
         menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
-        menuItem.getAccessibleContext().setAccessibleDescription("This doesn't really do anything");
         menuItem.addActionListener(new MenuActionListener());
         menu.add(menuItem);
 
@@ -191,7 +189,7 @@ public class ProcessLog {
         }
 
         SimpleDateFormat sdf = new SimpleDateFormat("dd-M-yyyy hh:mm:ss");
-        String fileName = logPathSave + "/" + entityStatus.getLogName().replace('/', '_') + "_#_"
+        String fileName = logPathSave + "/" + entityStatus.getSystemName() + "_" + entityStatus.getLogName().replace('/', '_') + "_#_"
                 + sdf.format(new Date()) + ".csv";
         fileName = fileName.replace(' ', '_').replace(':', '-');
         PrintWriter csv = null;
@@ -205,7 +203,7 @@ public class ProcessLog {
         Object[] text;
         for (int i = 0; i < cntState[entityStatus.CNT_ALL]; i++) {
             text = entityStatus.getAllString(i);
-            String textCSV = text[0] + " ; " + text[1] + " ; " + text[2] + " ; " + text[3] + " ; " + text[4] + " ;\n";
+            String textCSV = text[0] + " ; " + text[1] + " ; " + text[2] + " ; " + text[3] + " ; " + text[4] + " ; " + text[5] + " ; " + text[6] + " ;\n";
             // System.out.println(textCSV);
             csv.write(textCSV);
         }
@@ -215,8 +213,6 @@ public class ProcessLog {
 
     private boolean createDirLog(String path) {
         File theDir = new File(path);
-
-        // if the directory does not exist, create it
         if (!theDir.exists()) {
             System.out.println("creating directory: " + theDir.getName());
             boolean result = false;
@@ -254,10 +250,9 @@ public class ProcessLog {
         }
 
         SimpleDateFormat sdf = new SimpleDateFormat("dd-M-yyyy hh:mm:ss");
-        String fileName = logPathSave + "/" + entityStatus.getLogName().replace('/', '_') + "_#_"
+        String fileName = logPathSave + "/" + entityStatus.getSystemName() + "_" + entityStatus.getLogName().replace('/', '_') + "_#_"
                 + sdf.format(new Date()) + ".pdf";
         fileName = fileName.replace(' ', '_').replace(':', '-');
-        // System.out.println(fileName.replace(' ', '_').replace(':', '-'));
         Document doc = new Document(PageSize.A4.rotate());
         try {
             PdfWriter.getInstance(doc, new FileOutputStream(fileName));
@@ -268,9 +263,15 @@ public class ProcessLog {
                 pdfTable.addCell(tableState.getColumnName(i));
             }
             // extracting data from the JTable and inserting it to PdfPTable
-            for (int rows = 0; rows < tableState.getRowCount() - 1; rows++) {
+            for (int rows = 0; rows < tableState.getRowCount(); rows++) {
                 for (int cols = 0; cols < tableState.getColumnCount(); cols++) {
-                    pdfTable.addCell(tableState.getModel().getValueAt(rows, cols).toString());
+                    try{
+                        //System.out.println("R1: "+rows+ " - C1: "+cols);
+                        pdfTable.addCell(tableState.getModel().getValueAt(rows, cols).toString());
+                        //System.out.println("R2: "+rows+ " - C2: "+cols);
+                    }catch(Exception e){
+                        //e.printStackTrace();
+                    }
                 }
             }
             doc.add(pdfTable);
@@ -304,10 +305,8 @@ public class ProcessLog {
 
         if (graphicMode) {
             JScrollPane tableScrollPane = new JScrollPane(tableState);
-
             container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
             container.add(tableScrollPane, BorderLayout.CENTER);
-            // frame.pack();
             frame.setVisible(true);
         }
     }
@@ -318,8 +317,6 @@ public class ProcessLog {
             System.out.println("Selected: " + e.getActionCommand());
             frame.dispose();
             newPath = true;
-
         }
-
     }
 }

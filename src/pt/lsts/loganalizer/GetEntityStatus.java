@@ -15,6 +15,7 @@ public class GetEntityStatus {
     public int CNT_ALL = 3;
 
     private String logName;
+    private String systemName;
     private static int cntState[] = new int[5];
     private static Map<Integer, String> entityLabel = new HashMap<>();
 
@@ -44,7 +45,8 @@ public class GetEntityStatus {
     private int cntAlllMsg;
 
     public GetEntityStatus(Map<Integer, String> entityIdLabel) {
-        logName = "NULL";
+        logName = "null";
+        systemName = "\"\"";
         for (int i = 0; i < 4; i++)
             cntState[i] = 0;
         entityLabel = entityIdLabel;
@@ -71,7 +73,6 @@ public class GetEntityStatus {
             allTask.put(cntAlllMsg, msg.getContext());
             allMessage.put(cntAlllMsg, msg.getText());
             allEntity.put(cntAlllMsg++, entityLabel.get((int) msg.getSrcEnt()));
-
         }
         else if (msg.getType() == LogBookEntry.TYPE.CRITICAL) {
             // System.out.println("LogBookEntry: " + msg.getDate() + " # " + logName + " # " + msg.getContext() + " # "
@@ -88,7 +89,6 @@ public class GetEntityStatus {
             allTask.put(cntAlllMsg, msg.getContext());
             allMessage.put(cntAlllMsg, msg.getText());
             allEntity.put(cntAlllMsg++, entityLabel.get((int) msg.getSrcEnt()));
-
         }
         else if (msg.getType() == LogBookEntry.TYPE.WARNING) {
             if (!msg.getText().equals("now in 'CALIBRATION' mode")
@@ -143,12 +143,14 @@ public class GetEntityStatus {
     }
 
     public Object[] getAllString(int id) {
-        Object[] stringText = new Object[5];
+        Object[] stringText = new Object[7];
         stringText[0] = allState.get(id);
-        stringText[1] = allDate.get(id);
-        stringText[2] = allTask.get(id);
-        stringText[3] = allMessage.get(id);
-        stringText[4] = allEntity.get(id);
+        stringText[1] = getSystemName();
+        stringText[2] = getLogName();
+        stringText[3] = allDate.get(id);
+        stringText[4] = allTask.get(id);
+        stringText[5] = allMessage.get(id);
+        stringText[6] = allEntity.get(id);
 
         return stringText;
     }
@@ -157,13 +159,18 @@ public class GetEntityStatus {
     public void on(LoggingControl msg) {
         if (!msg.getName().equals(logName) && msg.getName().length() > 8) {
             logName = msg.getName();
+            systemName = msg.getSourceName();
         }
     }
 
     public String getLogName() {
         return logName;
     }
-    
+
+    public String getSystemName() {
+        return systemName;
+    }
+
     public int[] getStatusCnt() {
         return cntState;
     }
