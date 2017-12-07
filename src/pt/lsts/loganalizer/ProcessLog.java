@@ -1,6 +1,7 @@
 package pt.lsts.loganalizer;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -31,7 +32,12 @@ import javax.swing.table.TableModel;
 
 import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
+import com.lowagie.text.Element;
+import com.lowagie.text.Font;
+import com.lowagie.text.FontFactory;
 import com.lowagie.text.PageSize;
+import com.lowagie.text.Phrase;
+import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
 
@@ -39,7 +45,11 @@ import pt.lsts.imc.lsf.batch.LsfBatch;
 
 public class ProcessLog {
 
-    private Object columnNames[] = { "STATUS", "System Name", "Log Name", "Date/Time", "Task", "Message", "Entity Name" };
+    private Object columnNames[] = { "STATUS", "System Name", "Log Name", "Date/Time", "Task", "Message",
+            "Entity Name" };
+    private Color COLOR_ERROR = new Color(250, 100, 100);
+    private Color COLOR_WARNING = new Color(230, 190, 80);
+    private Color COLOR_CRITICAL = new Color(170, 80, 230);
 
     private JFrame frame = null;
     private JPanel container;
@@ -189,8 +199,8 @@ public class ProcessLog {
         }
 
         SimpleDateFormat sdf = new SimpleDateFormat("dd-M-yyyy hh:mm:ss");
-        String fileName = logPathSave + "/" + entityStatus.getSystemName() + "_" + entityStatus.getLogName().replace('/', '_') + "_#_"
-                + sdf.format(new Date()) + ".csv";
+        String fileName = logPathSave + "/" + entityStatus.getSystemName() + "_"
+                + entityStatus.getLogName().replace('/', '_') + "_#_" + sdf.format(new Date()) + ".csv";
         fileName = fileName.replace(' ', '_').replace(':', '-');
         PrintWriter csv = null;
         try {
@@ -203,7 +213,8 @@ public class ProcessLog {
         Object[] text;
         for (int i = 0; i < cntState[entityStatus.CNT_ALL]; i++) {
             text = entityStatus.getAllString(i);
-            String textCSV = text[0] + " ; " + text[1] + " ; " + text[2] + " ; " + text[3] + " ; " + text[4] + " ; " + text[5] + " ; " + text[6] + " ;\n";
+            String textCSV = text[0] + " ; " + text[1] + " ; " + text[2] + " ; " + text[3] + " ; " + text[4] + " ; "
+                    + text[5] + " ; " + text[6] + " ;\n";
             // System.out.println(textCSV);
             csv.write(textCSV);
         }
@@ -250,27 +261,45 @@ public class ProcessLog {
         }
 
         SimpleDateFormat sdf = new SimpleDateFormat("dd-M-yyyy hh:mm:ss");
-        String fileName = logPathSave + "/" + entityStatus.getSystemName() + "_" + entityStatus.getLogName().replace('/', '_') + "_#_"
-                + sdf.format(new Date()) + ".pdf";
+        String fileName = logPathSave + "/" + entityStatus.getSystemName() + "_"
+                + entityStatus.getLogName().replace('/', '_') + "_#_" + sdf.format(new Date()) + ".pdf";
         fileName = fileName.replace(' ', '_').replace(':', '-');
+
+        Font font = FontFactory.getFont("Times Roman", 9, Color.BLACK);
         Document doc = new Document(PageSize.A4.rotate());
+
         try {
             PdfWriter.getInstance(doc, new FileOutputStream(fileName));
             doc.open();
             PdfPTable pdfTable = new PdfPTable(tableState.getColumnCount());
             // adding table headers
             for (int i = 0; i < tableState.getColumnCount(); i++) {
-                pdfTable.addCell(tableState.getColumnName(i));
+                PdfPCell cell = new PdfPCell(new Phrase(tableState.getColumnName(i), font));
+                cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                pdfTable.addCell(cell);
             }
             // extracting data from the JTable and inserting it to PdfPTable
             for (int rows = 0; rows < tableState.getRowCount(); rows++) {
+                Object[] temp = entityStatus.getAllString(rows);
                 for (int cols = 0; cols < tableState.getColumnCount(); cols++) {
-                    try{
-                        //System.out.println("R1: "+rows+ " - C1: "+cols);
-                        pdfTable.addCell(tableState.getModel().getValueAt(rows, cols).toString());
-                        //System.out.println("R2: "+rows+ " - C2: "+cols);
-                    }catch(Exception e){
-                        //e.printStackTrace();
+                    try {
+                        PdfPCell cell = new PdfPCell(
+                                new Phrase(tableState.getModel().getValueAt(rows, cols).toString(), font));
+                        if (temp[0].equals("ERROR")) {
+                            cell.setBackgroundColor(COLOR_ERROR);
+                        }
+                        else if (temp[0].equals("CRITICAL")) {
+                            cell.setBackgroundColor(COLOR_CRITICAL);
+                        }
+                        else if (temp[0].equals("WARNING")) {
+                            cell.setBackgroundColor(COLOR_WARNING);
+                        }
+
+                        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                        pdfTable.addCell(cell);
+                    }
+                    catch (Exception e) {
+                        // e.printStackTrace();
                     }
                 }
             }
