@@ -267,11 +267,13 @@ public class ProcessLog {
 
         Font font = FontFactory.getFont("Times Roman", 9, Color.BLACK);
         Document doc = new Document(PageSize.A4.rotate());
+        doc.setMargins(10, 10, 10, 10);
 
         try {
             PdfWriter.getInstance(doc, new FileOutputStream(fileName));
             doc.open();
             PdfPTable pdfTable = new PdfPTable(tableState.getColumnCount());
+            pdfTable.setWidthPercentage(100);
             // adding table headers
             for (int i = 0; i < tableState.getColumnCount(); i++) {
                 PdfPCell cell = new PdfPCell(new Phrase(tableState.getColumnName(i), font));
