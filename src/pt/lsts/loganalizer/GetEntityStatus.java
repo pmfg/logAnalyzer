@@ -3,8 +3,10 @@ package pt.lsts.loganalizer;
 import java.util.HashMap;
 import java.util.Map;
 
+import pt.lsts.imc.Current;
 import pt.lsts.imc.LogBookEntry;
 import pt.lsts.imc.LoggingControl;
+import pt.lsts.imc.Voltage;
 import pt.lsts.imc.net.Consume;
 
 public class GetEntityStatus {
@@ -44,11 +46,23 @@ public class GetEntityStatus {
     private static Map<Integer, String> allEntity = new HashMap<>();
     private int cntAlllMsg;
 
+    private static Map<Integer, String> currentEntity = new HashMap<>();
+    private CurrentValues currentValues[] = new CurrentValues[16];
+
+    private static Map<Integer, String> voltageEntity = new HashMap<>();
+    private VoltageValues voltageValues[] = new VoltageValues[16];
+
     public GetEntityStatus(Map<Integer, String> entityIdLabel) {
         logName = "null";
         systemName = "\"\"";
         for (int i = 0; i < 4; i++)
             cntState[i] = 0;
+
+        for (int i = 0; i < 16; i++) {
+            currentValues[i] = new CurrentValues();
+            voltageValues[i] = new VoltageValues();
+        }
+
         entityLabel = entityIdLabel;
 
         cntErrorMsg = 0;
@@ -173,5 +187,85 @@ public class GetEntityStatus {
 
     public int[] getStatusCnt() {
         return cntState;
+    }
+
+    @Consume
+    public void on(Current msg) {
+        if (currentEntity.size() == 0) {
+            currentEntity.put(0, entityLabel.get((int) msg.getSrcEnt()));
+        }
+        else {
+            boolean haveEntity = false;
+            for (int i = 0; i < currentEntity.size(); i++) {
+                if (currentEntity.get(i).equals(entityLabel.get((int) msg.getSrcEnt())))
+                    haveEntity = true;
+            }
+
+            if (!haveEntity) {
+                currentEntity.put(currentEntity.size(), entityLabel.get((int) msg.getSrcEnt()));
+            }
+        }
+
+        for (int i = 0; i < currentEntity.size(); i++) {
+            if (currentEntity.get(i).equals(entityLabel.get((int) msg.getSrcEnt()))) {
+                currentValues[i].addValues(msg.getValue(), (double) msg.getTimestampMillis());
+            }
+        }
+    }
+
+    public int getSizeCurrentEntity() {
+        return currentEntity.size();
+    }
+
+    public String getCurrentEntity(int id) {
+        return currentEntity.get(id);
+    }
+
+    public Object[] getValuesOfEntityCurrent(int id, int sample) {
+        return currentValues[id].getValues(sample);
+    }
+
+    public int getCntOfEntityCurrent(int id) {
+        return currentValues[id].getSizeData();
+    }
+
+    @Consume
+    public void on(Voltage msg) {
+        if (voltageEntity.size() == 0) {
+            voltageEntity.put(0, entityLabel.get((int) msg.getSrcEnt()));
+        }
+        else {
+            boolean haveEntity = false;
+            for (int i = 0; i < voltageEntity.size(); i++) {
+                if (voltageEntity.get(i).equals(entityLabel.get((int) msg.getSrcEnt())))
+                    haveEntity = true;
+            }
+
+            if (!haveEntity) {
+                voltageEntity.put(voltageEntity.size(), entityLabel.get((int) msg.getSrcEnt()));
+            }
+        }
+
+        for (int i = 0; i < voltageEntity.size(); i++) {
+            if (voltageEntity.get(i).equals(entityLabel.get((int) msg.getSrcEnt()))) {
+                voltageValues[i].addValues(msg.getValue(), (double) msg.getTimestampMillis());
+            }
+        }
+    }
+
+    public int getSizeVoltageEntity() {
+        return voltageEntity.size();
+    }
+
+    public String getVoltageEntity(int id) {
+        return voltageEntity.get(id);
+    }
+
+    public Object[] getValuesOfEntityVoltage(int id, int sample) {
+        return voltageValues[id].getValues(sample);
+    }
+
+    public int getCntOfEntityVoltage(int id) {
+        return voltageValues[id].getSizeData();
     }
 }

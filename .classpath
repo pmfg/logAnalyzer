@@ -5,5 +5,7 @@
 	<classpathentry kind="lib" path="libs/libimc.jar"/>
 	<classpathentry kind="lib" path="libs/commons-cli-1.4.jar"/>
 	<classpathentry kind="lib" path="libs/com.lowagie.text-2.1.7.jar"/>
+	<classpathentry kind="lib" path="libs/jcommon-1.0.23.jar"/>
+	<classpathentry kind="lib" path="libs/jfreechart-1.0.19.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
+import java.lang.annotation.AnnotationTypeMismatchException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -29,6 +30,15 @@ import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
+
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.DateAxis;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
 
 import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
@@ -71,6 +81,7 @@ public class ProcessLog {
     private int[] cntState;
     private boolean newPath;
     private String logPathSave;
+    private JPanel plotData;
 
     public ProcessLog() {
         super();
@@ -79,7 +90,6 @@ public class ProcessLog {
     public boolean addInfoOfLog(String log_path, boolean graphicMode, String logPathOutput) {
         newPath = false;
         logPathSave = logPathOutput;
-        System.out.println("AQUI1: " + logPathSave);
         if (graphicMode) {
             layoutInit();
             System.out.println("Log: " + log_path);
@@ -100,6 +110,7 @@ public class ProcessLog {
 
             System.out.println("Loading Entity Label id.");
             batch = LsfBatch.processFolders(new File[] { new File(path) });
+
             labelEntity = new GetLabelEntity();
             batch.process(labelEntity);
             entityIdLabel = labelEntity.getEntityLabel();
@@ -115,7 +126,7 @@ public class ProcessLog {
             return processResults(graphicMode);
         }
         catch (Exception e) {
-            System.out.println("ERROR loading log, is the correct path???");
+            System.out.println("ERROR processing log, is the correct path???");
             e.printStackTrace();
             return false;
         }
@@ -164,13 +175,16 @@ public class ProcessLog {
             infoText.setVisible(false);
             printToCSV();
             printToTable(true);
+            plotGraphic(true);
             printToPdf();
         }
         else {
 
             printToCSV();
             printToTable(false);
+            plotGraphic(false);
             printToPdf();
+
             System.exit(1);
         }
 
@@ -215,7 +229,6 @@ public class ProcessLog {
             text = entityStatus.getAllString(i);
             String textCSV = text[0] + " ; " + text[1] + " ; " + text[2] + " ; " + text[3] + " ; " + text[4] + " ; "
                     + text[5] + " ; " + text[6] + " ;\n";
-            // System.out.println(textCSV);
             csv.write(textCSV);
         }
         csv.close();
@@ -301,7 +314,6 @@ public class ProcessLog {
                         pdfTable.addCell(cell);
                     }
                     catch (Exception e) {
-                        // e.printStackTrace();
                     }
                 }
             }
@@ -349,5 +361,89 @@ public class ProcessLog {
             frame.dispose();
             newPath = true;
         }
+    }
+
+    private void plotGraphic(boolean graphicMode) {
+        if (graphicMode) {
+            plotData = new JPanel();
+            plotData.setLayout(new BoxLayout(plotData, BoxLayout.X_AXIS));
+        }
+        plotCurrent(graphicMode);
+        plotVoltage(graphicMode);
+
+        if (graphicMode) {
+            container.add(plotData);
+            frame.pack();
+        }
+    }
+
+    private void plotVoltage(boolean graphicMode) {
+        final XYSeries series[] = new XYSeries[entityStatus.getSizeVoltageEntity()];
+
+        for (int i = 0; i < entityStatus.getSizeVoltageEntity(); i++)
+            series[i] = new XYSeries(entityStatus.getVoltageEntity(i));
+
+        for (int t = 0; t < entityStatus.getSizeVoltageEntity(); t++) {
+            int cnt = entityStatus.getCntOfEntityVoltage(t);
+            for (int i = 0; i < cnt; i++) {
+                Object[] values = entityStatus.getValuesOfEntityVoltage(t, i);
+                series[t].add((Double) values[1], (Double) values[0]);
+            }
+        }
+
+        final XYSeriesCollection data = new XYSeriesCollection();
+        for (int i = 0; i < entityStatus.getSizeVoltageEntity(); i++)
+            data.addSeries(series[i]);
+
+        final JFreeChart chart = ChartFactory.createXYLineChart("Voltage", "Time", "Value", data,
+                PlotOrientation.VERTICAL, true, true, false);
+
+        XYPlot plot = (XYPlot) chart.getPlot();
+        DateAxis dateAxis = new DateAxis();
+        dateAxis.setDateFormatOverride(new SimpleDateFormat("H:mm:s.S"));
+        plot.setDomainAxis(dateAxis);
+        plot.setBackgroundPaint(Color.WHITE);
+        plot.setDomainGridlinesVisible(true);
+        plot.setDomainGridlinePaint(Color.lightGray);
+        plot.setRangeGridlinePaint(Color.lightGray);
+
+        final ChartPanel chartPanel = new ChartPanel(chart);
+        if (graphicMode)
+            plotData.add(chartPanel);
+    }
+
+    private void plotCurrent(boolean graphicMode) {
+        final XYSeries series[] = new XYSeries[entityStatus.getSizeCurrentEntity()];
+
+        for (int i = 0; i < entityStatus.getSizeCurrentEntity(); i++)
+            series[i] = new XYSeries(entityStatus.getCurrentEntity(i));
+
+        for (int t = 0; t < entityStatus.getSizeCurrentEntity(); t++) {
+            int cnt = entityStatus.getCntOfEntityCurrent(t);
+            for (int i = 0; i < cnt; i++) {
+                Object[] values = entityStatus.getValuesOfEntityCurrent(t, i);
+                series[t].add((Double) values[1], (Double) values[0]);
+            }
+        }
+
+        final XYSeriesCollection data = new XYSeriesCollection();
+        for (int i = 0; i < entityStatus.getSizeCurrentEntity(); i++)
+            data.addSeries(series[i]);
+
+        final JFreeChart chart = ChartFactory.createXYLineChart("Current", "Time", "Value", data,
+                PlotOrientation.VERTICAL, true, true, false);
+
+        XYPlot plot = (XYPlot) chart.getPlot();
+        DateAxis dateAxis = new DateAxis();
+        dateAxis.setDateFormatOverride(new SimpleDateFormat("H:mm:s.S"));
+        plot.setDomainAxis(dateAxis);
+        plot.setBackgroundPaint(Color.WHITE);
+        plot.setDomainGridlinesVisible(true);
+        plot.setDomainGridlinePaint(Color.lightGray);
+        plot.setRangeGridlinePaint(Color.lightGray);
+
+        final ChartPanel chartPanel = new ChartPanel(chart);
+        if (graphicMode)
+            plotData.add(chartPanel);
     }
 }

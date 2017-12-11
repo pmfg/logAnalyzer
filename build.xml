@@ -8,7 +8,9 @@
 		<pathelement location="bin" />
 		<pathelement location="libs/libimc.jar" />
 		<pathelement location="libs/commons-cli-1.4.jar" />
-        <pathelement location="libs/com.lowagie.text-2.1.7.jar" />
+		<pathelement location="libs/com.lowagie.text-2.1.7.jar" />
+		<pathelement location="libs/jfreechart-1.0.19.jar" />
+		<pathelement location="libs/jcommon-1.0.23.jar" />
 	</path>
 	<property name="exclude-defaults" value="**/Thumbs.db,**/thumbs.db,**/*~,**/#*#" />
 
@@ -26,9 +28,11 @@
 				<attribute name="Develop-Email" value="pedro@lsts.pt" />
 				<attribute name="Main-Class" value="pt.lsts.loganalizer.LogAnalizer" />
 			</manifest>
-			<zipfileset excludes="META-INF/*.SF" src="libs/libimc.jar"/>
-			<zipfileset excludes="META-INF/*.SF" src="libs/commons-cli-1.4.jar"/>
-            <zipfileset excludes="META-INF/*.SF" src="libs/com.lowagie.text-2.1.7.jar"/>
+			<zipfileset excludes="META-INF/*.SF" src="libs/libimc.jar" />
+			<zipfileset excludes="META-INF/*.SF" src="libs/commons-cli-1.4.jar" />
+			<zipfileset excludes="META-INF/*.SF" src="libs/com.lowagie.text-2.1.7.jar" />
+			<zipfileset excludes="META-INF/*.SF" src="libs/jfreechart-1.0.19.jar" />
+			<zipfileset excludes="META-INF/*.SF" src="libs/jcommon-1.0.23.jar" />
 		</jar>
 	</target>
 
