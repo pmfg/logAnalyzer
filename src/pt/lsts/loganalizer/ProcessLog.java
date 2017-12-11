@@ -2,6 +2,8 @@ package pt.lsts.loganalizer;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -9,7 +11,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
-import java.lang.annotation.AnnotationTypeMismatchException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -47,8 +48,11 @@ import com.lowagie.text.Font;
 import com.lowagie.text.FontFactory;
 import com.lowagie.text.PageSize;
 import com.lowagie.text.Phrase;
+import com.lowagie.text.pdf.DefaultFontMapper;
+import com.lowagie.text.pdf.PdfContentByte;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfTemplate;
 import com.lowagie.text.pdf.PdfWriter;
 
 import pt.lsts.imc.lsf.batch.LsfBatch;
@@ -82,6 +86,10 @@ public class ProcessLog {
     private boolean newPath;
     private String logPathSave;
     private JPanel plotData;
+    private JFreeChart chartCurrent;
+    private JFreeChart chartVoltage;
+    private int xPlotSizePdf = 840;
+    private int yPlotSizePdf = 480;
 
     public ProcessLog() {
         super();
@@ -283,7 +291,7 @@ public class ProcessLog {
         doc.setMargins(10, 10, 10, 10);
 
         try {
-            PdfWriter.getInstance(doc, new FileOutputStream(fileName));
+            PdfWriter writer = PdfWriter.getInstance(doc, new FileOutputStream(fileName));
             doc.open();
             PdfPTable pdfTable = new PdfPTable(tableState.getColumnCount());
             pdfTable.setWidthPercentage(100);
@@ -318,7 +326,27 @@ public class ProcessLog {
                 }
             }
             doc.add(pdfTable);
+            doc.newPage();
+
+            PdfContentByte cb = writer.getDirectContent();
+            PdfTemplate tp = cb.createTemplate(xPlotSizePdf, yPlotSizePdf);
+            Graphics2D g2 = tp.createGraphics(xPlotSizePdf, yPlotSizePdf, new DefaultFontMapper());
+            JFreeChart chart = chartCurrent;
+            chart.draw(g2, new Rectangle(xPlotSizePdf, yPlotSizePdf));
+            g2.dispose();
+            cb.addTemplate(tp, 0, 0);
+            doc.newPage();
+
+            PdfContentByte cb2 = writer.getDirectContent();
+            PdfTemplate tp2 = cb2.createTemplate(xPlotSizePdf, yPlotSizePdf);
+            Graphics2D g22 = tp2.createGraphics(xPlotSizePdf, yPlotSizePdf, new DefaultFontMapper());
+            JFreeChart chart2 = chartVoltage;
+            chart2.draw(g22, new Rectangle(xPlotSizePdf, yPlotSizePdf));
+            g22.dispose();
+            cb2.addTemplate(tp2, 0, 0);
+
             doc.close();
+
             System.out.println("done export to pdf: " + fileName);
         }
         catch (DocumentException ex) {
@@ -395,10 +423,10 @@ public class ProcessLog {
         for (int i = 0; i < entityStatus.getSizeVoltageEntity(); i++)
             data.addSeries(series[i]);
 
-        final JFreeChart chart = ChartFactory.createXYLineChart("Voltage", "Time", "Value", data,
-                PlotOrientation.VERTICAL, true, true, false);
+        chartVoltage = ChartFactory.createXYLineChart("Voltage", "Time", "Value", data, PlotOrientation.VERTICAL, true,
+                true, false);
 
-        XYPlot plot = (XYPlot) chart.getPlot();
+        XYPlot plot = (XYPlot) chartVoltage.getPlot();
         DateAxis dateAxis = new DateAxis();
         dateAxis.setDateFormatOverride(new SimpleDateFormat("H:mm:s.S"));
         plot.setDomainAxis(dateAxis);
@@ -407,9 +435,10 @@ public class ProcessLog {
         plot.setDomainGridlinePaint(Color.lightGray);
         plot.setRangeGridlinePaint(Color.lightGray);
 
-        final ChartPanel chartPanel = new ChartPanel(chart);
-        if (graphicMode)
+        if (graphicMode) {
+            final ChartPanel chartPanel = new ChartPanel(chartVoltage);
             plotData.add(chartPanel);
+        }
     }
 
     private void plotCurrent(boolean graphicMode) {
@@ -430,10 +459,10 @@ public class ProcessLog {
         for (int i = 0; i < entityStatus.getSizeCurrentEntity(); i++)
             data.addSeries(series[i]);
 
-        final JFreeChart chart = ChartFactory.createXYLineChart("Current", "Time", "Value", data,
-                PlotOrientation.VERTICAL, true, true, false);
+        chartCurrent = ChartFactory.createXYLineChart("Current", "Time", "Value", data, PlotOrientation.VERTICAL, true,
+                true, false);
 
-        XYPlot plot = (XYPlot) chart.getPlot();
+        XYPlot plot = (XYPlot) chartCurrent.getPlot();
         DateAxis dateAxis = new DateAxis();
         dateAxis.setDateFormatOverride(new SimpleDateFormat("H:mm:s.S"));
         plot.setDomainAxis(dateAxis);
@@ -442,8 +471,9 @@ public class ProcessLog {
         plot.setDomainGridlinePaint(Color.lightGray);
         plot.setRangeGridlinePaint(Color.lightGray);
 
-        final ChartPanel chartPanel = new ChartPanel(chart);
-        if (graphicMode)
+        if (graphicMode) {
+            final ChartPanel chartPanel = new ChartPanel(chartCurrent);
             plotData.add(chartPanel);
+        }
     }
 }
