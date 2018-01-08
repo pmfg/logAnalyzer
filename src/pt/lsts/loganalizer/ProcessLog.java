@@ -111,9 +111,14 @@ public class ProcessLog {
 
     private boolean processLog(String path, boolean graphicMode) {
         try {
+            Thread t = null;
+            CounterTimePass counterTime = null;
             if (graphicMode) {
                 infoText.setText("Log: " + path);
                 infoText.setText(infoText.getText() + " \nLoading Entity Label id.");
+                counterTime = new CounterTimePass();
+                t = new Thread(counterTime);
+                t.start();
             }
 
             System.out.println("Loading Entity Label id.");
@@ -123,13 +128,23 @@ public class ProcessLog {
             batch.process(labelEntity);
             entityIdLabel = labelEntity.getEntityLabel();
 
-            if (graphicMode)
+            if (graphicMode){
+                counterTime.stopThread();
+                t.join(1000);
                 infoText.setText(infoText.getText() + " \nLoading Entity States of Tasks.");
+                counterTime = new CounterTimePass();
+                t = new Thread(counterTime);
+                t.start();
+            }
 
             System.out.println("Loading Entity States of Tasks.");
             batch = LsfBatch.processFolders(new File[] { new File(path) });
             entityStatus = new GetEntityStatus(entityIdLabel);
             batch.process(entityStatus);
+            if (graphicMode){
+                counterTime.stopThread();
+                t.join(1000);
+            }
 
             return processResults(graphicMode);
         }
