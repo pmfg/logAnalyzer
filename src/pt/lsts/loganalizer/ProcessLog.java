@@ -116,7 +116,7 @@ public class ProcessLog {
             if (graphicMode) {
                 infoText.setText("Log: " + path);
                 infoText.setText(infoText.getText() + " \nLoading Entity Label id.");
-                counterTime = new CounterTimePass();
+                counterTime = new CounterTimePass(infoText);
                 t = new Thread(counterTime);
                 t.start();
             }
@@ -132,7 +132,7 @@ public class ProcessLog {
                 counterTime.stopThread();
                 t.join(1000);
                 infoText.setText(infoText.getText() + " \nLoading Entity States of Tasks.");
-                counterTime = new CounterTimePass();
+                counterTime = new CounterTimePass(infoText);
                 t = new Thread(counterTime);
                 t.start();
             }
