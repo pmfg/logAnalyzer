@@ -2,8 +2,8 @@ package pt.lsts.loganalizer;
 
 public class VoltageValues {
 
-    private Double[] value = new Double[32600];
-    private Double[] time = new Double[32600];
+    private Double[] value = new Double[326000];
+    private Double[] time = new Double[326000];
     private int cntSize = 0;
 
     public VoltageValues() {
