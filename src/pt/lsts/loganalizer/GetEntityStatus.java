@@ -46,11 +46,12 @@ public class GetEntityStatus {
     private static Map<Integer, String> allEntity = new HashMap<>();
     private int cntAlllMsg;
 
+    private static int maxNumberOfEntity = 32;
     private static Map<Integer, String> currentEntity = new HashMap<>();
-    private CurrentValues currentValues[] = new CurrentValues[16];
+    private CurrentValues currentValues[] = new CurrentValues[maxNumberOfEntity];
 
     private static Map<Integer, String> voltageEntity = new HashMap<>();
-    private VoltageValues voltageValues[] = new VoltageValues[16];
+    private VoltageValues voltageValues[] = new VoltageValues[maxNumberOfEntity];
 
     public GetEntityStatus(Map<Integer, String> entityIdLabel) {
         logName = "null";
@@ -58,7 +59,7 @@ public class GetEntityStatus {
         for (int i = 0; i < 4; i++)
             cntState[i] = 0;
 
-        for (int i = 0; i < 16; i++) {
+        for (int i = 0; i < maxNumberOfEntity; i++) {
             currentValues[i] = new CurrentValues();
             voltageValues[i] = new VoltageValues();
         }
