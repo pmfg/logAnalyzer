@@ -14,6 +14,7 @@ import java.io.PrintWriter;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -77,8 +78,8 @@ public class ProcessLog {
     private JMenuItem menuItem;
     private LsfBatch batch;
     private Map<Integer, String> entityIdLabel = new HashMap<>();
-    private EntityLabelInfo labelEntity;
-    private LogDataExtractor entityStatus;
+    private EntityLabelInfo entityLabelInfo;
+    private LogDataExtractor logDataExtractor;
     private ImageIcon loading;
     // private JPanel container;
     private JTextArea infoText;
@@ -127,9 +128,9 @@ public class ProcessLog {
             System.out.println("Loading Entity Label id.");
             batch = LsfBatch.processFolders(new File[] { new File(path) });
 
-            labelEntity = new EntityLabelInfo();
-            batch.process(labelEntity);
-            entityIdLabel = labelEntity.getEntityLabel();
+            entityLabelInfo = new EntityLabelInfo();
+            batch.process(entityLabelInfo);
+            entityIdLabel = entityLabelInfo.getEntityLabel();
 
             if (graphicMode) {
                 counterTime.stopThread();
@@ -142,8 +143,9 @@ public class ProcessLog {
 
             System.out.println("Loading Entity States of Tasks.");
             batch = LsfBatch.processFolders(new File[] { new File(path) });
-            entityStatus = new LogDataExtractor(entityIdLabel);
-            batch.process(entityStatus);
+            logDataExtractor = new LogDataExtractor(entityIdLabel);
+            batch.process(logDataExtractor);
+            logDataExtractor.calcFullDist();
             if (graphicMode) {
                 counterTime.stopThread();
                 t.join(1000);
@@ -190,13 +192,21 @@ public class ProcessLog {
     }
 
     private boolean processResults(boolean graphicMode) {
-        cntState = entityStatus.getStatusCnt();
-        System.out.println("\nError: " + cntState[entityStatus.CNT_ERROR]);
-        System.out.println("Critical: " + cntState[entityStatus.CNT_CRITICAL]);
-        System.out.println("Warning: " + cntState[entityStatus.CNT_WARNING]);
-        System.out.println("All mesages: " + cntState[entityStatus.CNT_ALL] + "\n");
-        System.out.println("Total distance: " + df2.format(entityStatus.getTotalDistKm()) + " km  ( "
-                + df2.format(entityStatus.getTotalDistNauticalMiles()) + " nautical miles )");
+        cntState = logDataExtractor.getStatusCnt();
+        System.out.println("\nError: " + cntState[logDataExtractor.CNT_ERROR]);
+        System.out.println("Critical: " + cntState[logDataExtractor.CNT_CRITICAL]);
+        System.out.println("Warning: " + cntState[logDataExtractor.CNT_WARNING]);
+        System.out.println("All mesages: " + cntState[logDataExtractor.CNT_ALL] + "\n");
+        System.out.println("Total distance estimated: "
+                + df2.format(logDataExtractor.getTotalDistKm(logDataExtractor.getTotalDistMEstimated())) + " km  ( "
+                + df2.format(logDataExtractor.getTotalDistNauticalMiles(
+                        logDataExtractor.getTotalDistKm(logDataExtractor.getTotalDistMEstimated())))
+                + " nautical miles )");
+        System.out.println("Total distance corrected: "
+                + df2.format(logDataExtractor.getTotalDistKm(logDataExtractor.getTotalDistMCorrected())) + " km  ( "
+                + df2.format(logDataExtractor.getTotalDistNauticalMiles(
+                        logDataExtractor.getTotalDistKm(logDataExtractor.getTotalDistMCorrected())))
+                + " nautical miles )");
 
         if (graphicMode) {
             image.setVisible(false);
@@ -241,8 +251,8 @@ public class ProcessLog {
         }
 
         SimpleDateFormat sdf = new SimpleDateFormat("dd-M-yyyy hh:mm:ss");
-        String fileName = logPathSave + "/" + entityStatus.getSystemName() + "_"
-                + entityStatus.getLogName().replace('/', '_') + "_#_" + sdf.format(new Date()) + ".csv";
+        String fileName = logPathSave + "/" + logDataExtractor.getSystemName() + "_"
+                + logDataExtractor.getLogName().replace('/', '_') + "_#_" + sdf.format(new Date()) + ".csv";
         fileName = fileName.replace(' ', '_').replace(':', '-');
         PrintWriter csv = null;
         try {
@@ -253,14 +263,22 @@ public class ProcessLog {
         }
 
         Object[] text;
-        for (int i = 0; i < cntState[entityStatus.CNT_ALL]; i++) {
-            text = entityStatus.getAllString(i);
+        for (int i = 0; i < cntState[logDataExtractor.CNT_ALL]; i++) {
+            text = logDataExtractor.getAllString(i);
             String textCSV = text[0] + " ; " + text[1] + " ; " + text[2] + " ; " + text[3] + " ; " + text[4] + " ; "
                     + text[5] + " ; " + text[6] + " ;\n";
             csv.write(textCSV);
         }
-        csv.write("\nTotal distance;" + df2.format(entityStatus.getTotalDistKm()) + ";km;"
-                + df2.format(entityStatus.getTotalDistNauticalMiles()) + ";nautical miles;\n");
+        csv.write("\nTotal distance estimated;"
+                + df2.format(logDataExtractor.getTotalDistKm(logDataExtractor.getTotalDistMEstimated())) + ";km;"
+                + df2.format(logDataExtractor.getTotalDistNauticalMiles(
+                        logDataExtractor.getTotalDistKm(logDataExtractor.getTotalDistMEstimated())))
+                + ";nautical miles;\n");
+        csv.write("\nTotal distance corrected;"
+                + df2.format(logDataExtractor.getTotalDistKm(logDataExtractor.getTotalDistMCorrected())) + ";km;"
+                + df2.format(logDataExtractor.getTotalDistNauticalMiles(
+                        logDataExtractor.getTotalDistKm(logDataExtractor.getTotalDistMCorrected())))
+                + ";nautical miles;\n");
         csv.close();
         System.out.println("done export to csv: " + fileName);
     }
@@ -304,8 +322,8 @@ public class ProcessLog {
         }
 
         SimpleDateFormat sdf = new SimpleDateFormat("dd-M-yyyy hh:mm:ss");
-        String fileName = logPathSave + "/" + entityStatus.getSystemName() + "_"
-                + entityStatus.getLogName().replace('/', '_') + "_#_" + sdf.format(new Date()) + ".pdf";
+        String fileName = logPathSave + "/" + logDataExtractor.getSystemName() + "_"
+                + logDataExtractor.getLogName().replace('/', '_') + "_#_" + sdf.format(new Date()) + ".pdf";
         fileName = fileName.replace(' ', '_').replace(':', '-');
 
         Font font = FontFactory.getFont("Times Roman", 9, Color.BLACK);
@@ -325,7 +343,7 @@ public class ProcessLog {
             }
             // extracting data from the JTable and inserting it to PdfPTable
             for (int rows = 0; rows < tableState.getRowCount(); rows++) {
-                Object[] temp = entityStatus.getAllString(rows);
+                Object[] temp = logDataExtractor.getAllString(rows);
                 for (int cols = 0; cols < tableState.getColumnCount(); cols++) {
                     try {
                         PdfPCell cell = new PdfPCell(
@@ -393,8 +411,8 @@ public class ProcessLog {
         tableState.setDefaultRenderer(Object.class, new TableCellRender());
         modelTableState = (DefaultTableModel) tableState.getModel();
 
-        for (int i = 0; i < cntState[entityStatus.CNT_ALL]; i++)
-            modelTableState.addRow(entityStatus.getAllString(i));
+        for (int i = 0; i < cntState[logDataExtractor.CNT_ALL]; i++)
+            modelTableState.addRow(logDataExtractor.getAllString(i));
 
         if (graphicMode) {
             JScrollPane tableScrollPane = new JScrollPane(tableState);
@@ -428,21 +446,21 @@ public class ProcessLog {
     }
 
     private void plotVoltage(boolean graphicMode) {
-        final XYSeries series[] = new XYSeries[entityStatus.getSizeVoltageEntity()];
+        final XYSeries series[] = new XYSeries[logDataExtractor.getSizeVoltageEntity()];
 
-        for (int i = 0; i < entityStatus.getSizeVoltageEntity(); i++)
-            series[i] = new XYSeries(entityStatus.getVoltageEntity(i));
+        for (int i = 0; i < logDataExtractor.getSizeVoltageEntity(); i++)
+            series[i] = new XYSeries(logDataExtractor.getVoltageEntity(i));
 
-        for (int t = 0; t < entityStatus.getSizeVoltageEntity(); t++) {
-            int cnt = entityStatus.getCntOfEntityVoltage(t);
+        for (int t = 0; t < logDataExtractor.getSizeVoltageEntity(); t++) {
+            int cnt = logDataExtractor.getCntOfEntityVoltage(t);
             for (int i = 0; i < cnt; i++) {
-                Object[] values = entityStatus.getValuesOfEntityVoltage(t, i);
+                Object[] values = logDataExtractor.getValuesOfEntityVoltage(t, i);
                 series[t].add((Double) values[1], (Double) values[0]);
             }
         }
 
         final XYSeriesCollection data = new XYSeriesCollection();
-        for (int i = 0; i < entityStatus.getSizeVoltageEntity(); i++)
+        for (int i = 0; i < logDataExtractor.getSizeVoltageEntity(); i++)
             data.addSeries(series[i]);
 
         chartVoltage = ChartFactory.createXYLineChart("Voltage", "Time", "Value", data, PlotOrientation.VERTICAL, true,
@@ -464,21 +482,21 @@ public class ProcessLog {
     }
 
     private void plotCurrent(boolean graphicMode) {
-        final XYSeries series[] = new XYSeries[entityStatus.getSizeCurrentEntity()];
+        final XYSeries series[] = new XYSeries[logDataExtractor.getSizeCurrentEntity()];
 
-        for (int i = 0; i < entityStatus.getSizeCurrentEntity(); i++)
-            series[i] = new XYSeries(entityStatus.getCurrentEntity(i));
+        for (int i = 0; i < logDataExtractor.getSizeCurrentEntity(); i++)
+            series[i] = new XYSeries(logDataExtractor.getCurrentEntity(i));
 
-        for (int t = 0; t < entityStatus.getSizeCurrentEntity(); t++) {
-            int cnt = entityStatus.getCntOfEntityCurrent(t);
+        for (int t = 0; t < logDataExtractor.getSizeCurrentEntity(); t++) {
+            int cnt = logDataExtractor.getCntOfEntityCurrent(t);
             for (int i = 0; i < cnt; i++) {
-                Object[] values = entityStatus.getValuesOfEntityCurrent(t, i);
+                Object[] values = logDataExtractor.getValuesOfEntityCurrent(t, i);
                 series[t].add((Double) values[1], (Double) values[0]);
             }
         }
 
         final XYSeriesCollection data = new XYSeriesCollection();
-        for (int i = 0; i < entityStatus.getSizeCurrentEntity(); i++)
+        for (int i = 0; i < logDataExtractor.getSizeCurrentEntity(); i++)
             data.addSeries(series[i]);
 
         chartCurrent = ChartFactory.createXYLineChart("Current", "Time", "Value", data, PlotOrientation.VERTICAL, true,

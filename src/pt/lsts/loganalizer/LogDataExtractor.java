@@ -1,17 +1,18 @@
 package pt.lsts.loganalizer;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 import pt.lsts.imc.Current;
 import pt.lsts.imc.EstimatedState;
-import pt.lsts.imc.GpsFix;
+//import pt.lsts.imc.GpsFix;
 import pt.lsts.imc.LogBookEntry;
 import pt.lsts.imc.LoggingControl;
 import pt.lsts.imc.Rpm;
 import pt.lsts.imc.Voltage;
 import pt.lsts.imc.net.Consume;
-import pt.lsts.util.WGS84Utilities;
+//import pt.lsts.util.WGS84Utilities;
 
 public class LogDataExtractor {
 
@@ -60,10 +61,13 @@ public class LogDataExtractor {
     private double depth;
     private boolean haveRpmActuation;
     private double lastDepthValue;
-    private double totalDist;
+    private double totalDistEstimated;
+    private double totalDistCorrected;
     private double lastXValue;
     private double lastYValue;
     boolean isFirstValue;
+
+    private CorrectedPositionBuilder correctPos = new CorrectedPositionBuilder();
 
     public LogDataExtractor(Map<Integer, String> entityIdLabel) {
         logName = "null";
@@ -84,7 +88,8 @@ public class LogDataExtractor {
 
         haveRpmActuation = false;
         lastDepthValue = 0;
-        totalDist = 0;
+        totalDistEstimated = 0;
+        totalDistCorrected = 0;
         lastXValue = 0;
         lastYValue = 0;
         isFirstValue = true;
@@ -304,6 +309,7 @@ public class LogDataExtractor {
             lastYValue = msg.getY();
             lastDepthValue = msg.getDepth();
             isFirstValue = false;
+            correctPos.update(msg);
         }
         else {
             if (haveRpmActuation) {
@@ -311,29 +317,56 @@ public class LogDataExtractor {
                 double y = msg.getY();
                 double dist = Math.hypot((x - lastXValue), (y - lastYValue));
                 depth = Math.abs(msg.getDepth());
-                //System.out.println("dist: " + dist + " m");
+                // System.out.println("dist: " + dist + " m");
 
                 dist = Math.hypot(dist, (depth - lastDepthValue));
-                totalDist = totalDist + dist;
+                totalDistEstimated = totalDistEstimated + dist;
                 // System.out.println("dist: "+dist+ " total: "+totalDist);
 
                 lastXValue = x;
                 lastYValue = y;
                 lastDepthValue = depth;
+
+                correctPos.update(msg);
             }
         }
     }
 
-    public double getTotalDistKm() {
-        return getTotalDistM() * 0.001;
+    public void calcFullDist() {
+        ArrayList<SystemPositionAndAttitude> pos = getCorrectPositions();
+        // System.out.println("size: "+pos.size());
+        SystemPositionAndAttitude a = pos.get(0);
+        LocationType oldPos = a.getPosition();
+        double distCorrect = 0;
+        for (int t = 1; t < pos.size(); t++) {
+            a = pos.get(t);
+            LocationType newPos = a.getPosition();
+            distCorrect = newPos.getDistanceInMeters(oldPos);
+            // System.out.println("POS: "+distCorrect);
+            totalDistCorrected = totalDistCorrected + distCorrect;
+            oldPos = newPos;
+        }
+        // System.out.println("result test: "+totalDistCorrected*0.001+" km");
     }
 
-    public double getTotalDistM() {
-        return totalDist;
+    public double getTotalDistKm(double value) {
+        return value * 0.001;
     }
 
-    public double getTotalDistNauticalMiles() {
-        return getTotalDistKm() * 0.539956803;
+    public double getTotalDistMEstimated() {
+        return totalDistEstimated;
+    }
+
+    public double getTotalDistMCorrected() {
+        return totalDistCorrected;
+    }
+
+    public double getTotalDistNauticalMiles(double value) {
+        return value * 0.539956803;
+    }
+
+    public ArrayList<SystemPositionAndAttitude> getCorrectPositions() {
+        return correctPos.getPositions();
     }
 
 }
