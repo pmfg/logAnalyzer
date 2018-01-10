@@ -13,7 +13,7 @@ import pt.lsts.imc.Voltage;
 import pt.lsts.imc.net.Consume;
 import pt.lsts.util.WGS84Utilities;
 
-public class GetEntityStatus {
+public class LogDataExtractor {
 
     public int CNT_ERROR = 0;
     public int CNT_CRITICAL = 1;
@@ -65,7 +65,7 @@ public class GetEntityStatus {
     private double lastYValue;
     boolean isFirstValue;
 
-    public GetEntityStatus(Map<Integer, String> entityIdLabel) {
+    public LogDataExtractor(Map<Integer, String> entityIdLabel) {
         logName = "null";
         systemName = "\"\"";
         for (int i = 0; i < 4; i++)

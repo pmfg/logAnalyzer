@@ -6,7 +6,7 @@ import java.util.Map;
 import pt.lsts.imc.EntityInfo;
 import pt.lsts.imc.net.Consume;
 
-public class GetLabelEntity {
+public class EntityLabelInfo {
 
     private Map<Integer, String> entityIdLabel = new HashMap<>();
 

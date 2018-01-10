@@ -66,7 +66,7 @@ public class ProcessLog {
     private Color COLOR_WARNING = new Color(230, 190, 80);
     private Color COLOR_CRITICAL = new Color(170, 80, 230);
 
-    private static DecimalFormat df2 = new DecimalFormat(".##");
+    private static DecimalFormat df2 = new DecimalFormat("#.##");
 
     private JFrame frame = null;
     private JPanel container;
@@ -77,8 +77,8 @@ public class ProcessLog {
     private JMenuItem menuItem;
     private LsfBatch batch;
     private Map<Integer, String> entityIdLabel = new HashMap<>();
-    private GetLabelEntity labelEntity;
-    private GetEntityStatus entityStatus;
+    private EntityLabelInfo labelEntity;
+    private LogDataExtractor entityStatus;
     private ImageIcon loading;
     // private JPanel container;
     private JTextArea infoText;
@@ -127,7 +127,7 @@ public class ProcessLog {
             System.out.println("Loading Entity Label id.");
             batch = LsfBatch.processFolders(new File[] { new File(path) });
 
-            labelEntity = new GetLabelEntity();
+            labelEntity = new EntityLabelInfo();
             batch.process(labelEntity);
             entityIdLabel = labelEntity.getEntityLabel();
 
@@ -142,7 +142,7 @@ public class ProcessLog {
 
             System.out.println("Loading Entity States of Tasks.");
             batch = LsfBatch.processFolders(new File[] { new File(path) });
-            entityStatus = new GetEntityStatus(entityIdLabel);
+            entityStatus = new LogDataExtractor(entityIdLabel);
             batch.process(entityStatus);
             if (graphicMode) {
                 counterTime.stopThread();
