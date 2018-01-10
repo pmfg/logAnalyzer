@@ -12,6 +12,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.net.URL;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -65,10 +66,12 @@ public class ProcessLog {
     private Color COLOR_WARNING = new Color(230, 190, 80);
     private Color COLOR_CRITICAL = new Color(170, 80, 230);
 
+    private static DecimalFormat df2 = new DecimalFormat(".##");
+
     private JFrame frame = null;
     private JPanel container;
-    private int widhtFrame = 960;
-    private int heightFrame = 640;
+    private int widhtFrame = 640;
+    private int heightFrame = 360;
     private JMenuBar menuBar;
     private JMenu menu;
     private JMenuItem menuItem;
@@ -128,7 +131,7 @@ public class ProcessLog {
             batch.process(labelEntity);
             entityIdLabel = labelEntity.getEntityLabel();
 
-            if (graphicMode){
+            if (graphicMode) {
                 counterTime.stopThread();
                 t.join(1000);
                 infoText.setText(infoText.getText() + " \nLoading Entity States of Tasks.");
@@ -141,7 +144,7 @@ public class ProcessLog {
             batch = LsfBatch.processFolders(new File[] { new File(path) });
             entityStatus = new GetEntityStatus(entityIdLabel);
             batch.process(entityStatus);
-            if (graphicMode){
+            if (graphicMode) {
                 counterTime.stopThread();
                 t.join(1000);
             }
@@ -192,6 +195,8 @@ public class ProcessLog {
         System.out.println("Critical: " + cntState[entityStatus.CNT_CRITICAL]);
         System.out.println("Warning: " + cntState[entityStatus.CNT_WARNING]);
         System.out.println("All mesages: " + cntState[entityStatus.CNT_ALL] + "\n");
+        System.out.println("Total distance: " + df2.format(entityStatus.getTotalDistKm()) + " km  ( "
+                + df2.format(entityStatus.getTotalDistNauticalMiles()) + " nautical miles )");
 
         if (graphicMode) {
             image.setVisible(false);
@@ -254,6 +259,8 @@ public class ProcessLog {
                     + text[5] + " ; " + text[6] + " ;\n";
             csv.write(textCSV);
         }
+        csv.write("\nTotal distance;" + df2.format(entityStatus.getTotalDistKm()) + ";km;"
+                + df2.format(entityStatus.getTotalDistNauticalMiles()) + ";nautical miles;\n");
         csv.close();
         System.out.println("done export to csv: " + fileName);
     }

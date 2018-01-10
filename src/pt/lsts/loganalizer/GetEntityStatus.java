@@ -4,10 +4,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 import pt.lsts.imc.Current;
+import pt.lsts.imc.EstimatedState;
+import pt.lsts.imc.GpsFix;
 import pt.lsts.imc.LogBookEntry;
 import pt.lsts.imc.LoggingControl;
+import pt.lsts.imc.Rpm;
 import pt.lsts.imc.Voltage;
 import pt.lsts.imc.net.Consume;
+import pt.lsts.util.WGS84Utilities;
 
 public class GetEntityStatus {
 
@@ -53,6 +57,14 @@ public class GetEntityStatus {
     private static Map<Integer, String> voltageEntity = new HashMap<>();
     private VoltageValues voltageValues[] = new VoltageValues[maxNumberOfEntity];
 
+    private double depth;
+    private boolean haveRpmActuation;
+    private double lastDepthValue;
+    private double totalDist;
+    private double lastXValue;
+    private double lastYValue;
+    boolean isFirstValue;
+
     public GetEntityStatus(Map<Integer, String> entityIdLabel) {
         logName = "null";
         systemName = "\"\"";
@@ -69,6 +81,13 @@ public class GetEntityStatus {
         cntErrorMsg = 0;
         cntWarningMsg = 0;
         cntCriticalMsg = 0;
+
+        haveRpmActuation = false;
+        lastDepthValue = 0;
+        totalDist = 0;
+        lastXValue = 0;
+        lastYValue = 0;
+        isFirstValue = true;
     }
 
     @Consume
@@ -269,4 +288,52 @@ public class GetEntityStatus {
     public int getCntOfEntityVoltage(int id) {
         return voltageValues[id].getSizeData();
     }
+
+    @Consume
+    public void on(Rpm msg) {
+        if (msg.getValue() != 0)
+            haveRpmActuation = true;
+        else
+            haveRpmActuation = false;
+    }
+
+    @Consume
+    public void on(EstimatedState msg) {
+        if (isFirstValue) {
+            lastXValue = msg.getX();
+            lastYValue = msg.getY();
+            lastDepthValue = msg.getDepth();
+            isFirstValue = false;
+        }
+        else {
+            if (haveRpmActuation) {
+                double x = msg.getX();
+                double y = msg.getY();
+                double dist = Math.hypot((x - lastXValue), (y - lastYValue));
+                depth = Math.abs(msg.getDepth());
+                //System.out.println("dist: " + dist + " m");
+
+                dist = Math.hypot(dist, (depth - lastDepthValue));
+                totalDist = totalDist + dist;
+                // System.out.println("dist: "+dist+ " total: "+totalDist);
+
+                lastXValue = x;
+                lastYValue = y;
+                lastDepthValue = depth;
+            }
+        }
+    }
+
+    public double getTotalDistKm() {
+        return getTotalDistM() * 0.001;
+    }
+
+    public double getTotalDistM() {
+        return totalDist;
+    }
+
+    public double getTotalDistNauticalMiles() {
+        return getTotalDistKm() * 0.539956803;
+    }
+
 }
